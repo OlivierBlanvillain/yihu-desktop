@@ -206,8 +206,12 @@ public class HelloTinyB {
     // writeV(rblRx2, "a700000000000000000000000000000000000000");
     // writeV(rblRx2, "a700000000000000000000000000000000000000");
     // writeV(rblRx2, "a7000000000000000000715b");
-    writeV(rblRx2, "a50e234c0e7100730001040f0200f49f");
     writeV(rblRx2, "a50e234c0e0512770001041101002034");
+    writeV(rblRx2, "a50e234c0e7100730001040f0200f49f");
+    // 0000   a5 0b 23 43 0b 34 00 3b 00 12 13 00 65
+    //              23,43,0b,00,00,00,00,26,13,13,4d
+
+    sendSliced(sendReqAllLightOff(), rblRx2);
 
     Thread.sleep(1000*100);
     sensor.disconnect();
@@ -228,4 +232,65 @@ public class HelloTinyB {
       }
       return data;
   }
+
+  static final byte[] sendReqAllLightOff() {
+      System.out.println("UBLProtocol RBLPRotocol: sendReqAllLightOff");
+      byte c = 0;
+      byte d = 0;
+      byte e = 0;
+      byte f = 0;
+      byte by = c;
+      byte by2 = (byte)(by ^ 38);
+      byte[] arrby = new byte[]{(byte)35, (byte)67, (byte)11, (byte)0x34, 0, (byte)0x3b, 0, (byte)0x12, (byte)0x13, 0, 0};
+      arrby[10] = mkCheckSum(arrby, 10);
+      return arrby;
+  }
+
+  static byte mkCheckSum(byte[] arrby, int n) {
+      int n2 = 0;
+      for (int i = 0; i < n + 0; ++i) {
+          n2 = (byte)(n2 ^ arrby[i]);
+      }
+      return (byte)(n2 & 255);
+  }
+
+  static boolean sendSliced(byte[] arrby, BluetoothGattCharacteristic dst) {
+      int n;
+      if (arrby.length == 0) {
+          return true;
+      }
+      int n2 = arrby.length <= 255 ? 1 : 2;
+      byte[] arrby2 = new byte[arrby.length + n2];
+      arrby2[0] = (byte)(arrby.length & 255);
+      if (n2 == 2) {
+          arrby2[1] = (byte)(255 & arrby.length >> 8);
+      }
+      for (n = 0; n < arrby.length; ++n) {
+          arrby2[n + n2] = arrby[n];
+      }
+      if (dst != null) {
+          int n3;
+          for (n = arrby2.length; n > 0; n -= n3) {
+              n3 = 19;
+              if (n <= 19) {
+                  n3 = n;
+              }
+              arrby = new byte[n3 + 1];
+              arrby[0] = n == arrby2.length ? (n2 == 2 ? (byte)-90 : (byte)-91) : (byte)-89;
+              int n4 = 0;
+              while (n4 < n3) {
+                  int n5 = n4 + 1;
+                  arrby[n5] = arrby2[arrby2.length - n + n4];
+                  n4 = n5;
+              }
+              for (n4 = 4; n4 >= 0 && !dst.writeValue(arrby); --n4) {
+              }
+              if (n4 >= 0) continue;
+              return false;
+          }
+      }
+      return true;
+  }
+
+
 }
