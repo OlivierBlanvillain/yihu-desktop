@@ -6,15 +6,15 @@ import java.util.concurrent.TimeUnit;
 public class HelloTinyB {
   static void printDevice(BluetoothDevice device) {
     System.out.print("Address = " + device.getAddress());
-    System.out.print(" Name = " + device.getName());
-    System.out.print(" Connected = " + device.getConnected());
+    System.out.print(", Name = " + device.getName());
+    System.out.print(", Connected = " + device.getConnected());
     System.out.println();
   }
 
   static BluetoothDevice getDevice(String address) throws InterruptedException {
     BluetoothManager manager = BluetoothManager.getBluetoothManager();
     BluetoothDevice device = null;
-    for (int i = 0; i < 15; ++i) {
+    for (int i = 0; i < 30; ++i) {
       List<BluetoothDevice> list = manager.getDevices();
       if (list == null)
         return null;
@@ -28,19 +28,12 @@ public class HelloTinyB {
       if (device != null) {
         return device;
       }
-      Thread.sleep(4000);
+      Thread.sleep(2000);
     }
     return null;
   }
 
-  /*
-   * Our device should expose a temperature service, which has a UUID we can find out from the data sheet. The service
-   * description of the SensorTag can be found here:
-   * http://processors.wiki.ti.com/images/a/a8/BLE_SensorTag_GATT_Server.pdf. The service we are looking for has the
-   * short UUID AA00 which we insert into the TI Base UUID: f000XXXX-0451-4000-b000-000000000000
-   */
   static BluetoothGattService getService(BluetoothDevice device, String UUID) throws InterruptedException {
-    System.out.println("Services exposed by device:");
     BluetoothGattService boardService = null;
     List<BluetoothGattService> bluetoothServices = null;
     do {
@@ -49,11 +42,10 @@ public class HelloTinyB {
         return null;
 
       for (BluetoothGattService service : bluetoothServices) {
-        System.out.println("UUID: " + service.getUUID());
         if (service.getUUID().equals(UUID))
           boardService = service;
       }
-      Thread.sleep(4000);
+      Thread.sleep(1000);
     } while (bluetoothServices.isEmpty());
     return boardService;
   }
@@ -73,9 +65,9 @@ public class HelloTinyB {
   public static void main(String[] args) throws InterruptedException {
     String deviceAddress = "B4:10:7B:24:1B:4B";
     BluetoothManager manager = BluetoothManager.getBluetoothManager();
-    boolean discoveryStarted = manager.startDiscovery();
+    if (manager.startDiscovery())
+      System.out.println("The discovery started...");
 
-    System.out.println("The discovery started: " + (discoveryStarted ? "true" : "false"));
     BluetoothDevice device = getDevice(deviceAddress);
 
     try {
@@ -124,28 +116,51 @@ public class HelloTinyB {
       device.disconnect();
       System.exit(-1);
     }
-    System.out.println("Found the characteristics");
-
-    byte[] raw = rblName.readValue();
-    System.out.println("Name = " + new String(raw));
+    System.out.println("Found characteristics");
 
     rblRx2.writeValue(turnOffTheLight());
 
-    for (int i = 0; i < 19; i++) {
-      for (int j = 0; j < 19; j++) {
+    rblRx.enableValueNotifications((v) -> {
+      if (v.length == 12) {
+        assert(v[9] == getPosSendMagicJni(v[7], v[8], v[3], v[4], (byte)0));
+        assert(v[10] == getPosSendMagicJni(v[7], v[8], v[3], v[4], (byte)1));
+        v[2] = getPosSendMagicJni(v[7], v[8], v[3], v[4], (byte)2);
+        v[4] = getPosSendMagicJni(v[7], v[8], v[3], v[4], (byte)3);
+        v[3] = v[2];
+        v[2] = (byte)5;
+        int n2 = v[3] - 1;
+        int n = 19 - v[4];
+        System.out.println("before boardX:" + n2 + " boardY:" + n);
+        assert(!(n2 > 17 || n2 % 2 != 1 || n > 19 || n % 2 != 0));
+      }
+    });
+    int i = 0;
+    int j = 0;
+    while (true) {
+      if (!device.getConnected()) {
+        System.out.println("Reconnecting...");
+        device.connect();
+      } else {
         rblRx2.writeValue(placeStone(i, j, 2));
       }
+      Thread.sleep(5*100);
     }
-    for (int i = 0; i < 19; i++) {
-      for (int j = 0; j < 19; j++) {
-        rblRx2.writeValue(placeStone(i, j, 0));
-      }
-    }
-    for (int i = 0; i < 19; i++) {
-      for (int j = 0; j < 19; j++) {
-        rblRx2.writeValue(placeStone(i, j, 1));
-      }
-    }
+
+    // for (int i = 0; i < 19; i++) {
+    //   for (int j = 0; j < 19; j++) {
+    //     rblRx2.writeValue(placeStone(i, j, 2));
+    //   }
+    // }
+    // for (int i = 0; i < 19; i++) {
+    //   for (int j = 0; j < 19; j++) {
+    //     rblRx2.writeValue(placeStone(i, j, 0));
+    //   }
+    // }
+    // for (int i = 0; i < 19; i++) {
+    //   for (int j = 0; j < 19; j++) {
+    //     rblRx2.writeValue(placeStone(i, j, 1));
+    //   }
+    // }
   }
 
   static final byte[] placeStone(int x, int y, int c) {
@@ -199,5 +214,26 @@ public class HelloTinyB {
       n4 = n5;
     }
     return arrby;
+  }
+
+
+  public static byte getPosSendMagicJni(byte a0, byte a1, byte a2, byte a3, byte a4) {
+    char cVar1;
+    switch(a4) {
+      case 0:
+        return (byte)(int)((a1 | a0) ^ a2);
+      case 1:
+        return (byte)(int)(a2 & ((int)a0 << 1));
+      case 2:
+        cVar1 = (char)(-10);
+        a1 = a0;
+        break;
+      case 3:
+        cVar1 = (char)(-9);
+        break;
+      default:
+        return '\0';
+    }
+    return (byte)(int)(cVar1 + (a2 ^ a1));
   }
 }
