@@ -6,7 +6,7 @@ compile: $(shell find . -name "*.java" -type f)
 	- javac -cp /usr/local/lib/java/tinyb.jar $^
 
 run: compile FORCE
-	- java -Djava.library.path=/usr/local/lib/ -cp /usr/local/lib/java/tinyb.jar:. HelloTinyB
+	- java -Djava.library.path=/usr/local/lib/ -cp /usr/local/lib/java/tinyb.jar:. Main
 
 clean: FORCE
 	- find . -name "*.class" -type f -delete
