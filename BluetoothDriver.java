@@ -27,7 +27,13 @@ class BluetoothDriver {
     }
 
     BluetoothGattService boardService = getService(device, "0000fff0-0000-1000-8000-00805f9b34fb");
-    System.out.println("Found service " + boardService.getUUID());
+    if (boardService == null) {
+      System.err.println("Service not found.");
+      device.disconnect();
+      System.exit(-1);
+    } else {
+      System.out.println("Found service " + boardService.getUUID());
+    }
 
     // BluetoothGattCharacteristic rblName = getCharacteristic(boardService,
       // "0000fff1-0000-1000-8000-00805f9b34fb");
@@ -39,13 +45,15 @@ class BluetoothDriver {
       "0000fff4-0000-1000-8000-00805f9b34fb");
     outChannel = getCharacteristic(boardService,
       "0000fff3-0000-1000-8000-00805f9b34fb");
-
     if (this.inChannel == null || this.outChannel == null) {
-      System.err.println("Could not find some of the characteristics.");
+      System.err.println("Characteristics not found.");
       device.disconnect();
       System.exit(-1);
+    } else {
+      System.out.println("Found characteristics");
     }
-    System.out.println("Found characteristics");
+
+    outChannel.writeValue(reset());
 
     inChannel.enableValueNotifications((arrby) -> {
       if (arrby.length == 12)
@@ -88,13 +96,17 @@ class BluetoothDriver {
     return null;
   }
 
-  public void setLight(int x, int y, int c) {
-    if (c == 0)
-      System.out.println("Turning off " + x + " " + y);
-    else
-      System.out.println("Lighting on " + x + " " + y);
-    if (outChannel != null)
-      outChannel.writeValue(light(x, y, c));
+  public boolean setLight(int x, int y, int c) {
+    String prefix = c == 0 ? "Turning off " : "Lighting on ";
+    System.out.println(prefix + Main.showCoord(x, y));
+    if (outChannel != null) {
+      for (int i = 0; i < 4; ++i) {
+        boolean ok = outChannel.writeValue(light(x, 18 - y, c));
+        if (ok)
+          return true;
+      }
+    }
+    return false;
   }
 
   private byte[] reset() {
@@ -164,22 +176,12 @@ class BluetoothDriver {
   }
 
   private byte getPosSendMagicJni(byte a0, byte a1, byte a2, byte a3, byte a4) {
-    char cVar1;
     switch(a4) {
-      case 0:
-        return (byte)(int)((a1 | a0) ^ a2);
-      case 1:
-        return (byte)(int)(a2 & ((int)a0 << 1));
-      case 2:
-        cVar1 = (char)(-10);
-        a1 = a0;
-        break;
-      case 3:
-        cVar1 = (char)(-9);
-        break;
-      default:
-        return '\0';
+      case 0:  return (byte)(int)((a1 | a0) ^ a2);
+      case 1:  return (byte)(int)(a2 & ((int)a0 << 1));
+      case 2:  return (byte)(int)((char)(-10) + (a2 ^ a0));
+      case 3:  return (byte)(int)((char)(-9) + (a2 ^ a1));
+      default: return 0;
     }
-    return (byte)(int)(cVar1 + (a2 ^ a1));
   }
 }
