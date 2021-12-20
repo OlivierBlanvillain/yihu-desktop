@@ -7,7 +7,7 @@ public class Main {
   public static int WHITE = 2;
 
   public static void main(String[] args) throws InterruptedException, AWTException {
-    ComputerDriver computer = new ComputerDriver();
+    ScreenDriver computer = new ScreenDriver();
     BluetoothDriver bluetooth = new BluetoothDriver();
 
     bluetooth.init((p) -> {

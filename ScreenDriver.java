@@ -3,7 +3,7 @@ import java.awt.event.InputEvent;
 import java.awt.image.BufferedImage;
 import javax.swing.*;
 
-class ComputerDriver {
+class ScreenDriver {
   private static int INIT_X = 201;
   private static int INIT_Y = 57;
   private static int INIT_W = 649;
@@ -17,7 +17,7 @@ class ComputerDriver {
   Object lock = new Object();
   Robot robot;
 
-  public ComputerDriver() throws AWTException {
+  public ScreenDriver() throws AWTException {
     robot = new Robot();
   }
 
