@@ -53,8 +53,6 @@ class BluetoothDriver {
       System.out.println("Found characteristics");
     }
 
-    outChannel.writeValue(reset());
-
     inChannel.enableValueNotifications((arrby) -> {
       if (arrby.length == 12)
         callback.accept(decodeMovePacket(arrby));
@@ -97,40 +95,61 @@ class BluetoothDriver {
   }
 
   public boolean setLight(int x, int y, int c) {
-    String prefix = c == 0 ? "Turning off " : "Lighting on ";
-    System.out.println(prefix + Main.showCoord(x, y));
+    y = 18 - y;
+    byte magic = (byte)(((byte)x ^ (byte)y) << (byte)1);
+    byte[] arrby = new byte[] {
+      (byte)35,
+      (byte)0x4C,
+      (byte)14,
+      (byte)0,
+      (byte)0,
+      (byte)0,
+      (byte)0,
+      (byte)1,
+      (byte)x,
+      (byte)y,
+      (byte)c,
+      (byte)0,
+      magic,
+      (byte)0
+    };
+    setChecksum(arrby);
+    arrby = prefixed(arrby);
     if (outChannel != null) {
-      for (int i = 0; i < 4; ++i) {
-        boolean ok = outChannel.writeValue(light(x, 18 - y, c));
-        if (ok)
-          return true;
-      }
+      return outChannel.writeValue(arrby);
     }
     return false;
   }
 
-  private byte[] reset() {
-    byte by = 0;
-    byte by2 = (byte)(by ^ 38);
-    byte[] arrby = new byte[]{(byte)35, (byte)67, (byte)11, (byte)0x34, 0, (byte)0x3b, 0, (byte)0x12, (byte)0x13, 0, 0};
-    arrby[10] = checksum(arrby);
-    return prefixed(arrby);
+  public boolean resetLights() {
+    byte[] arrby = new byte[] {
+      (byte)35,
+      (byte)67,
+      (byte)11,
+      (byte)0x34,
+      (byte)0,
+      (byte)0x3b,
+      (byte)0,
+      (byte)0x12,
+      (byte)0x13,
+      (byte)0,
+      (byte)0
+    };
+    setChecksum(arrby);
+    arrby = prefixed(arrby);
+    if (outChannel != null) {
+      return outChannel.writeValue(arrby);
+    }
+    return false;
   }
 
-  private byte[] light(int x, int y, int c) {
-    byte magic = (byte)(((byte)x ^ (byte)y) << (byte)1);
-    byte[] arrby = new byte[] { (byte)35, (byte)0x4C, (byte)14, 0, 0, 0, 0, 1, (byte)x, (byte)y, (byte)c, 0, magic, 0 };
-    arrby[13] = checksum(arrby);
-    return prefixed(arrby);
-  }
-
-  private byte checksum(byte[] arrby) {
+  private void setChecksum(byte[] arrby) {
     int n2 = 0;
     int n = arrby.length - 1;
     for (int i = 0; i < n + 0; ++i) {
       n2 = (byte)(n2 ^ arrby[i]);
     }
-    return (byte)(n2 & 255);
+    arrby[n] = (byte)(n2 & 255);
   }
 
   private byte[] prefixed(byte[] arrby) {
@@ -163,25 +182,18 @@ class BluetoothDriver {
   }
 
   private Point decodeMovePacket(byte[] a) {
-    assert(a[9] == getPosSendMagicJni(a[7], a[8], a[3], a[4], (byte)0));
-    assert(a[10] == getPosSendMagicJni(a[7], a[8], a[3], a[4], (byte)1));
-    a[2] = getPosSendMagicJni(a[7], a[8], a[3], a[4], (byte)2);
-    a[4] = getPosSendMagicJni(a[7], a[8], a[3], a[4], (byte)3);
+    byte magic0 = (byte)(int)((a[8] | a[7]) ^ a[3]);
+    byte magic1 = (byte)(int)(a[3] & ((int)a[7] << 1));
+    byte magic2 = (byte)(int)((char)(-10) + (a[3] ^ a[7]));
+    byte magic3 = (byte)(int)((char)(-9) + (a[3] ^ a[8]));
+    assert(a[9] == magic0 && a[10] == magic1);
+    a[2] = magic2;
+    a[4] = magic3;
     a[3] = a[2];
     a[2] = (byte)5;
     int n2 = a[3] - 1;
     int n = 19 - a[4];
     assert(!(n2 > 17 || n2 % 2 != 1 || n > 19 || n % 2 != 0));
     return new Point(n2, n);
-  }
-
-  private byte getPosSendMagicJni(byte a0, byte a1, byte a2, byte a3, byte a4) {
-    switch(a4) {
-      case 0:  return (byte)(int)((a1 | a0) ^ a2);
-      case 1:  return (byte)(int)(a2 & ((int)a0 << 1));
-      case 2:  return (byte)(int)((char)(-10) + (a2 ^ a0));
-      case 3:  return (byte)(int)((char)(-9) + (a2 ^ a1));
-      default: return 0;
-    }
   }
 }

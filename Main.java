@@ -11,7 +11,7 @@ public class Main {
     BluetoothDriver bluetooth = new BluetoothDriver();
 
     bluetooth.init((p) -> {
-      System.out.println("Clicking   " + showCoord(p.x, p.y));
+      System.out.println("Clicking " + showCoord(p.x, p.y));
       boolean ok = computer.click(p.x, p.y);
       if (!ok)
         System.out.println("Clicking failed?");
@@ -19,22 +19,27 @@ public class Main {
 
     computer.init();
 
+    bluetooth.resetLights();
+
     int[][] prev = new int[19][19];
     for (;;) {
       int[][] next = computer.capture();
       if (countNewStones(prev, next) >= 2) {
-        System.out.println("Popup?");
-        Thread.sleep(200);
+        // System.out.println(showBoard(next));
+        System.out.print("P?");
+        Thread.sleep(1000);
         continue;
       }
       boolean updated = false;
       for (int i = 0; i < 19; ++i) {
         for (int j = 0; j < 19; ++j) {
           if (next[i][j] != prev[i][j]) {
+            String prefix = next[i][j] == EMPTY ? "Turning off " : "Lighting on ";
+            System.out.println(prefix + Main.showCoord(i, j));
             boolean ok = bluetooth.setLight(i, j, next[i][j]);
-            if (ok)
+            if (ok) {
               updated = true;
-            else
+            } else
               System.out.println("Bluetooth dead?");
           }
         }
@@ -77,8 +82,6 @@ public class Main {
           sb.append(" x");
       }
       sb.append(' ');
-      if (19 - j < 10)
-        sb.append(' ');
       sb.append(String.valueOf(19 - j));
       sb.append('\n');
     }
