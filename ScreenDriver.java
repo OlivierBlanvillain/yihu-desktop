@@ -55,7 +55,7 @@ class ScreenDriver {
     t.join();
   }
 
-  public int[][] capture() {
+  public int[][] screenshot() {
     int[][] output = new int[19][19];
     Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
     Rectangle screenRectangle = new Rectangle(screenSize);
@@ -83,7 +83,7 @@ class ScreenDriver {
       robot.mouseMove(xCoord, yCoord);
       robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
       robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-      if (capture()[x][y] != Main.EMPTY)
+      if (screenshot()[x][y] != Main.EMPTY)
         return true;
       System.out.println("doubleclicking");
     }

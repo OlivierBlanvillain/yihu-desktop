@@ -1,5 +1,6 @@
 import java.util.*;
 import java.awt.AWTException;
+import java.awt.Point;
 
 public class Main {
   public static int EMPTY = 0;
@@ -7,57 +8,65 @@ public class Main {
   public static int WHITE = 2;
 
   public static void main(String[] args) throws InterruptedException, AWTException {
-    ScreenDriver computer = new ScreenDriver();
-    BluetoothDriver bluetooth = new BluetoothDriver();
+    ScreenDriver screenDriver = new ScreenDriver();
+    BluetoothDriver bluetoothDriver = new BluetoothDriver();
 
-    bluetooth.init((p) -> {
-      System.out.println("Clicking " + showCoord(p.x, p.y));
-      boolean ok = computer.click(p.x, p.y);
+    bluetoothDriver.init((p) -> {
+      System.out.println("Clicking " + showCoord(p));
+      boolean ok = screenDriver.click(p.x, p.y);
       if (!ok)
         System.out.println("Clicking failed?");
     });
 
-    computer.init();
+    bluetoothDriver.resetLights();
 
-    bluetooth.resetLights();
+    screenDriver.init();
+    Thread.sleep(500);
 
     int[][] prev = new int[19][19];
     for (;;) {
-      int[][] next = computer.capture();
-      if (countNewStones(prev, next) >= 2) {
-        // System.out.println(showBoard(next));
-        System.out.print("P?");
-        Thread.sleep(1000);
-        continue;
-      }
-      boolean updated = false;
-      for (int i = 0; i < 19; ++i) {
-        for (int j = 0; j < 19; ++j) {
-          if (next[i][j] != prev[i][j]) {
-            String prefix = next[i][j] == EMPTY ? "Turning off " : "Lighting on ";
-            System.out.println(prefix + Main.showCoord(i, j));
-            boolean ok = bluetooth.setLight(i, j, next[i][j]);
-            if (ok) {
-              updated = true;
-            } else
-              System.out.println("Bluetooth dead?");
-          }
-        }
-      }
-      prev = next;
-      if (!updated)
+      int[][] next = screenDriver.screenshot();
+      int d = diff(prev, next);
+      Point newStone = singleNewStone(prev, next);
+      if (d == 0) {
         Thread.sleep(200);
+      } else if (newStone == null) {
+        System.out.println(showBoard(next));
+        System.out.println("Popup?");
+        bluetoothDriver.setAllLights(next);
+      } else {
+        System.out.println("Lighting on " + Main.showCoord(newStone));
+        int newColor = next[newStone.x][newStone.y];
+        boolean ok = bluetoothDriver.setLight(newStone.x, newStone.y, newColor);
+        if (!ok)
+          continue;
+        if (d > 1) {
+          System.out.println("Capture");
+          bluetoothDriver.setAllLights(next);
+        }
+        prev = next;
+      }
     }
   }
 
-  private static int countNewStones(int[][] prev, int[][] next) {
-    int count = 0;
-    for (int i = 0; i < 19; ++i) {
-      for (int j = 0; j < 19; ++j) {
+  private static Point singleNewStone(int[][] prev, int[][] next) {
+    Point stone = null;
+    for (int i = 0; i < 19; ++i)
+      for (int j = 0; j < 19; ++j)
         if (next[i][j] != EMPTY && next[i][j] != prev[i][j])
+          if (stone == null)
+            stone = new Point(i, j);
+          else
+            return null;
+    return stone;
+  }
+
+  private static int diff(int[][] prev, int[][] next) {
+    int count = 0;
+    for (int i = 0; i < 19; ++i)
+      for (int j = 0; j < 19; ++j)
+        if (next[i][j] != prev[i][j])
           ++count;
-      }
-    }
     return count;
   }
 
@@ -89,7 +98,7 @@ public class Main {
     return sb.toString();
   }
 
-  public static String showCoord(int x, int y) {
-    return (char)('A' + x + (x > 7 ? 1 : 0)) + "" + (19 - y);
+  public static String showCoord(Point p) {
+    return (char)('A' + p.x + (p.x > 7 ? 1 : 0)) + "" + (19 - p.y);
   }
 }
