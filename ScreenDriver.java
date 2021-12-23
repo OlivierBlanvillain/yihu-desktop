@@ -4,21 +4,23 @@ import java.awt.image.BufferedImage;
 import javax.swing.*;
 
 class ScreenDriver {
-  private static int INIT_X = 201;
-  private static int INIT_Y = 57;
-  private static int INIT_W = 649;
-  private static int INIT_H = 649;
+  private static final int INIT_X = 228;
+  private static final int INIT_Y = 56;
+  private static final int INIT_W = 596;
+  private static final int INIT_H = 596;
 
-  private static int GOBAN_COLOR = -139130;
-  private static int WHITE_COLOR = -1;
-  private static int BLACK_COLOR = -7763575;
+  private static final int GOBAN_COLOR = 0xFFFDE086;
+  private static final int WHITE_COLOR = 0xFFFFFFFF;
+  private static final int BLACK_COLOR = 0xFF898989;
 
-  Rectangle captureCoord = new Rectangle(INIT_X, INIT_Y, INIT_W, INIT_H);
-  Object lock = new Object();
-  Robot robot;
+  Rectangle captureRectangle;
+  private Object lock;
+  private Robot robot;
 
   public ScreenDriver() throws AWTException {
     robot = new Robot();
+    captureRectangle = new Rectangle(INIT_X, INIT_Y, INIT_W, INIT_H);
+    lock = new Object();
   }
 
   public void init() throws InterruptedException {
@@ -45,8 +47,8 @@ class ScreenDriver {
     t.start();
     button.addActionListener((e) -> {
       synchronized (lock) {
-        captureCoord = frame.getBounds();
-        System.out.println("Screen capture coordinates: " + captureCoord);
+        captureRectangle = frame.getBounds();
+        System.out.println("Screen capture coordinates: " + captureRectangle);
         frame.setVisible(false);
         frame.dispose();
         lock.notify();
@@ -57,13 +59,11 @@ class ScreenDriver {
 
   public int[][] screenshot() {
     int[][] output = new int[19][19];
-    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-    Rectangle screenRectangle = new Rectangle(screenSize);
-    BufferedImage img = robot.createScreenCapture(screenRectangle);
+    BufferedImage img = robot.createScreenCapture(captureRectangle);
     for (int x = 0; x < 19; ++x) {
       for (int y = 0; y < 19; ++y) {
-        int xCoord = captureCoord.x + (int)(captureCoord.width / 18.0 * x);
-        int yCoord = captureCoord.y + (int)(captureCoord.height / 18.0 * y);
+        int xCoord = (int)((captureRectangle.width - 1) / 18.0 * x);
+        int yCoord = (int)((captureRectangle.height - 1) / 18.0 * y);
         int pixel = img.getRGB(xCoord, yCoord);
         int[] candidates = new int[] { GOBAN_COLOR, WHITE_COLOR, BLACK_COLOR };
         int closest = closestColor(pixel, candidates);
@@ -76,18 +76,17 @@ class ScreenDriver {
     return output;
   }
 
-  public boolean click(int x, int y) {
-    int xCoord = captureCoord.x + (int)(captureCoord.width / 18.0 * x);
-    int yCoord = captureCoord.y + (int)(captureCoord.height / 18.0 * y);
+  public int click(int x, int y) {
+    int xCoord = captureRectangle.x + (int)(captureRectangle.width / 18.0 * x);
+    int yCoord = captureRectangle.y + (int)(captureRectangle.height / 18.0 * y);
     for (int i = 0; i < 10; ++i) {
       robot.mouseMove(xCoord, yCoord);
       robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
       robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
       if (screenshot()[x][y] != Main.EMPTY)
-        return true;
-      System.out.println("doubleclicking");
+        return i;
     }
-    return false;
+    return 0;
   }
 
   private int closestColor(int pixel, int[] candidates) {

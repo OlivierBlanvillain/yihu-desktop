@@ -1,6 +1,8 @@
 import java.util.*;
+import tinyb.BluetoothException;
 import java.awt.AWTException;
 import java.awt.Point;
+import java.util.function.Consumer;
 
 public class Main {
   public static int EMPTY = 0;
@@ -10,41 +12,52 @@ public class Main {
   public static void main(String[] args) throws InterruptedException, AWTException {
     ScreenDriver screenDriver = new ScreenDriver();
     BluetoothDriver bluetoothDriver = new BluetoothDriver();
+    Consumer<Point> bluetoothCallback = (p) -> {
+      StringBuilder sb = new StringBuilder();
+      sb.append("Clicking on ");
+      sb.append(showCoord(p));
+      int count = screenDriver.click(p.x, p.y);
+      if (count == 0)
+        sb.append(" (failed?)");
+      else if (count != 1)
+        sb.append(" (" + count + "x)");
+      System.out.println(sb.toString());
+    };
 
-    bluetoothDriver.init((p) -> {
-      System.out.println("Clicking " + showCoord(p));
-      boolean ok = screenDriver.click(p.x, p.y);
-      if (!ok)
-        System.out.println("Clicking failed?");
-    });
-
-    bluetoothDriver.resetLights();
-
+    bluetoothDriver.init(bluetoothCallback);
     screenDriver.init();
-    Thread.sleep(500);
+    Thread.sleep(100);
 
-    int[][] prev = new int[19][19];
     for (;;) {
-      int[][] next = screenDriver.screenshot();
-      int d = diff(prev, next);
-      Point newStone = singleNewStone(prev, next);
-      if (d == 0) {
-        Thread.sleep(200);
-      } else if (newStone == null) {
-        System.out.println(showBoard(next));
-        System.out.println("Popup?");
-        bluetoothDriver.setAllLights(next);
-      } else {
-        System.out.println("Lighting on " + Main.showCoord(newStone));
-        int newColor = next[newStone.x][newStone.y];
-        boolean ok = bluetoothDriver.setLight(newStone.x, newStone.y, newColor);
-        if (!ok)
-          continue;
-        if (d > 1) {
-          System.out.println("Capture");
-          bluetoothDriver.setAllLights(next);
+      try {
+        int[][] prev = new int[19][19];
+        for (;;) {
+          int[][] next = screenDriver.screenshot();
+          int d = diff(prev, next);
+          Point newStone = singleNewStone(prev, next);
+          if (d == 0) {
+            Thread.sleep(20);
+          } else {
+            if (newStone == null) {
+              System.out.println(showBoard(next));
+              boolean ok = bluetoothDriver.setAllLights(next);
+              if (!ok) continue;
+            } else {
+              System.out.println("Lighting on " + Main.showCoord(newStone));
+              int newColor = next[newStone.x][newStone.y];
+              boolean ok = bluetoothDriver.setLight(newStone.x, newStone.y, newColor);
+              if (!ok) continue;
+              if (d > 1) {
+                System.out.println("Capturing " + (d-1) + " stones");
+                bluetoothDriver.setAllLights(next);
+              }
+            }
+            prev = next;
+          }
         }
-        prev = next;
+      } catch (BluetoothException e) {
+        System.out.println("Bluetooth died...");
+        bluetoothDriver.init(bluetoothCallback);
       }
     }
   }

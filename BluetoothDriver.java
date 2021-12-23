@@ -4,7 +4,7 @@ import java.awt.Point;
 import java.util.function.Consumer;
 
 class BluetoothDriver {
-  private static String GOBAN_MAC_ADDRESS = "B4:10:7B:24:1B:4B";
+  private static final String GOBAN_MAC_ADDRESS = "B4:10:7B:24:1B:4B";
 
   private BluetoothGattCharacteristic inChannel;
   private BluetoothGattCharacteristic outChannel;
@@ -17,6 +17,7 @@ class BluetoothDriver {
       } catch (BluetoothException e) {
         e.printStackTrace();
         System.out.println("Retrying...");
+        Thread.sleep(1000);
       }
     }
   }
@@ -24,7 +25,7 @@ class BluetoothDriver {
   public boolean initOnce(Consumer<Point> callback) throws InterruptedException {
     BluetoothManager manager = BluetoothManager.getBluetoothManager();
     if (manager.startDiscovery())
-      System.out.println("Bluetooth discovery started...");
+      System.out.println("Waiting for Bluetooth device...");
     BluetoothDevice device = getDevice(GOBAN_MAC_ADDRESS);
     manager.stopDiscovery();
     if (device == null) {
@@ -44,7 +45,7 @@ class BluetoothDriver {
       device.disconnect();
       return false;
     } else {
-      System.out.println("Found service " + boardService.getUUID());
+      System.out.println("Found service " + boardService.getUUID() + ".");
     }
 
     // BluetoothGattCharacteristic rblName = getCharacteristic(boardService,
@@ -62,13 +63,15 @@ class BluetoothDriver {
       device.disconnect();
       return false;
     } else {
-      System.out.println("Found characteristics");
+      System.out.println("Found characteristics.");
     }
 
     inChannel.enableValueNotifications((arrby) -> {
       if (arrby.length == 12)
         callback.accept(decodeMovePacket(arrby));
     });
+
+    resetLights();
 
     return true;
   }
@@ -83,7 +86,7 @@ class BluetoothDriver {
       }
       if (device != null)
         return device;
-      Thread.sleep(2000);
+      Thread.sleep(1000);
     }
     return null;
   }
