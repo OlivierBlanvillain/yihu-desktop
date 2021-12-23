@@ -24,10 +24,9 @@ class ScreenDriver {
   }
 
   public void init() throws InterruptedException {
-    JFrame frame = new JFrame("");
-    Button button = new Button("Start!");
+    JFrame frame = new JFrame("Capture Area");
+    Button button = new Button("Start screen capture!");
     frame.getContentPane().add(button);
-    frame.setUndecorated(true);
     frame.setBounds(INIT_X, INIT_Y, INIT_W, INIT_H);
     frame.setVisible(true);
     frame.getBounds();
