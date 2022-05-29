@@ -33,54 +33,28 @@ public class Main {
         int[][] prev = new int[19][19];
         for (;;) {
           int[][] next = screenDriver.screenshot();
-          int d = diff(prev, next);
-          Point newStone = singleNewStone(prev, next);
-          if (d == 0) {
-            Thread.sleep(20);
+          if (equals(prev, next)) {
+            Thread.sleep(50);
           } else {
-            if (newStone == null) {
-              System.out.println(showBoard(next));
-              boolean ok = bluetoothDriver.setAllLights(next);
-              if (!ok) continue;
-            } else {
-              System.out.println("Lighting on " + Main.showCoord(newStone));
-              int newColor = next[newStone.x][newStone.y];
-              boolean ok = bluetoothDriver.setLight(newStone.x, newStone.y, newColor);
-              if (!ok) continue;
-              if (d > 1) {
-                System.out.println("Capturing " + (d-1) + " stones");
-                bluetoothDriver.setAllLights(next);
-              }
-            }
+            boolean ok = bluetoothDriver.setAllLights(next);
+            if (!ok) continue;
             prev = next;
+            System.out.println(showBoard(next));
           }
         }
       } catch (BluetoothException e) {
-        System.out.println("Bluetooth died...");
+        System.out.println(e.getMessage());
         bluetoothDriver.init(bluetoothCallback);
       }
     }
   }
 
-  private static Point singleNewStone(int[][] prev, int[][] next) {
-    Point stone = null;
-    for (int i = 0; i < 19; ++i)
-      for (int j = 0; j < 19; ++j)
-        if (next[i][j] != EMPTY && next[i][j] != prev[i][j])
-          if (stone == null)
-            stone = new Point(i, j);
-          else
-            return null;
-    return stone;
-  }
-
-  private static int diff(int[][] prev, int[][] next) {
-    int count = 0;
+  private static boolean equals(int[][] prev, int[][] next) {
     for (int i = 0; i < 19; ++i)
       for (int j = 0; j < 19; ++j)
         if (next[i][j] != prev[i][j])
-          ++count;
-    return count;
+          return false;
+    return true;
   }
 
   private static String showBoard(int[][] board) {

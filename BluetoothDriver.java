@@ -15,8 +15,7 @@ class BluetoothDriver {
       try {
         allSet = initOnce(callback);
       } catch (BluetoothException e) {
-        e.printStackTrace();
-        System.out.println("Retrying...");
+        System.out.println(e.getMessage());
         Thread.sleep(1000);
       }
     }
@@ -109,29 +108,6 @@ class BluetoothDriver {
         return characteristic;
     }
     return null;
-  }
-
-  public boolean setLight(int x, int y, int c) {
-    y = 18 - y;
-    byte magic = (byte)(((byte)x ^ (byte)y) << (byte)1);
-    byte[] arrby = new byte[] {
-      (byte)35,
-      (byte)0x4C,
-      (byte)14,
-      (byte)0,
-      (byte)0,
-      (byte)0,
-      (byte)0,
-      (byte)1,
-      (byte)x,
-      (byte)y,
-      (byte)c,
-      (byte)0,
-      magic,
-      (byte)0
-    };
-    setChecksum(arrby);
-    return sendSliced(arrby);
   }
 
   public boolean resetLights() {
