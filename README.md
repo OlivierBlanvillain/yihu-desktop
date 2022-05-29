@@ -6,7 +6,7 @@ This program improves over the manufacturer's application in that it is faster (
 
 ## Setup
 
-1. Install JDK 8 or above and [tinyb](https://github.com/intel-iot-devkit/tinyb).
+1. Install JDK 11 and [tinyb](https://github.com/intel-iot-devkit/tinyb).
 2. Update `GOBAN_MAC_ADDRESS` in `BluetoothDriver.java` with your device's address.
 3. Optionally update `INIT_*` in `ScreenDriver.java` to speed up the screen capture setup.
 4. `make compile`
