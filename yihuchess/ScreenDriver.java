@@ -1,3 +1,5 @@
+package yihuchess;
+
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.image.BufferedImage;

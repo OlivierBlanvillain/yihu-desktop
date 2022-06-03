@@ -1,3 +1,5 @@
+package yihuchess;
+
 import tinyb.*;
 import java.util.*;
 import java.awt.Point;

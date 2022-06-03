@@ -1,3 +1,5 @@
+package yihuchess;
+
 import java.util.*;
 import tinyb.BluetoothException;
 import java.awt.AWTException;
