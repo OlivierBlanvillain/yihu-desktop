@@ -63,8 +63,6 @@ class BluetoothDriver {
         callback.accept(decodeMovePacket(arrby));
     });
 
-    resetLights();
-
     return true;
   }
 
@@ -98,24 +96,6 @@ class BluetoothDriver {
         return characteristic;
     }
     return null;
-  }
-
-  public boolean resetLights() {
-    byte[] arrby = new byte[] {
-      (byte)35,
-      (byte)67,
-      (byte)11,
-      (byte)0x34,
-      (byte)0,
-      (byte)0x3b,
-      (byte)0,
-      (byte)0x12,
-      (byte)0x13,
-      (byte)0,
-      (byte)0
-    };
-    setChecksum(arrby);
-    return sendSliced(arrby);
   }
 
   public boolean setAllLights(int[][] board, boolean unicolor) {
