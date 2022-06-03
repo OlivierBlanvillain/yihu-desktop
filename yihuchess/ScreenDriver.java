@@ -18,13 +18,13 @@ class ScreenDriver {
   }
 
   public void init() throws InterruptedException {
-    JFrame frame = new JFrame("Capture Area");
-    Button button = new Button("Start screen capture!");
+    var frame = new JFrame("Capture Area");
+    var button = new Button("Start screen capture!");
     frame.getContentPane().add(button);
     frame.setBounds(INIT_X, INIT_Y, INIT_W, INIT_H);
     frame.setVisible(true);
     frame.getBounds();
-    Thread t = new Thread() {
+    var t = new Thread() {
       public void run() {
         synchronized(lock) {
           while (frame.isVisible())
@@ -52,7 +52,7 @@ class ScreenDriver {
 
   public int[][] screenshot() {
     int[][] output = new int[19][19];
-    BufferedImage img = robot.createScreenCapture(captureRectangle);
+    var img = robot.createScreenCapture(captureRectangle);
     for (int x = 0; x < 19; ++x) {
       for (int y = 0; y < 19; ++y) {
         int xCoord = (int)((captureRectangle.width - 1) / 18.0 * x);

@@ -13,10 +13,11 @@ public class Main {
   public static int WHITE = 2;
 
   public static void main(String[] args) throws InterruptedException, AWTException {
-    ScreenDriver screenDriver = new ScreenDriver();
-    BluetoothDriver bluetoothDriver = new BluetoothDriver();
+    var screenDriver = new ScreenDriver();
+    var bluetoothDriver = new BluetoothDriver();
+
     Consumer<Point> bluetoothCallback = (p) -> {
-      StringBuilder sb = new StringBuilder();
+      var sb = new StringBuilder();
       sb.append("Clicking on ");
       sb.append(showCoord(p));
       int count = screenDriver.click(p.x, p.y);
@@ -63,7 +64,7 @@ public class Main {
   }
 
   private static String showBoard(int[][] board) {
-    StringBuilder sb = new StringBuilder();
+    var sb = new StringBuilder();
     sb.append("\n");
     sb.append("   a b c d e f g h j k l m n o p q r s t\n");
     for (int j = 0; j < 19; ++j) {

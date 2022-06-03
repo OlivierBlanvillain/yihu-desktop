@@ -23,10 +23,10 @@ class BluetoothDriver {
   }
 
   public boolean initOnce(Consumer<Point> callback) throws InterruptedException {
-    BluetoothManager manager = BluetoothManager.getBluetoothManager();
+    var manager = BluetoothManager.getBluetoothManager();
     if (manager.startDiscovery())
       System.out.println("Waiting for Bluetooth device...");
-    BluetoothDevice device = getDevice(GOBAN_MAC_ADDRESS);
+    var device = getDevice(GOBAN_MAC_ADDRESS);
     manager.stopDiscovery();
     if (device == null) {
       System.err.println("Device not found.");
@@ -39,7 +39,7 @@ class BluetoothDriver {
       return false;
     }
 
-    BluetoothGattService boardService = getService(device, "0000fff0-0000-1000-8000-00805f9b34fb");
+    var boardService = getService(device, "0000fff0-0000-1000-8000-00805f9b34fb");
     if (boardService == null) {
       System.err.println("Service not found.");
       device.disconnect();
@@ -48,16 +48,8 @@ class BluetoothDriver {
       System.out.println("Found service " + boardService.getUUID() + ".");
     }
 
-    // BluetoothGattCharacteristic rblName = getCharacteristic(boardService,
-      // "0000fff1-0000-1000-8000-00805f9b34fb");
-    // BluetoothGattCharacteristic rblKey = getCharacteristic(boardService,
-      // "0000fff2-0000-1000-8000-00805f9b34fb");
-    // BluetoothGattCharacteristic rblBat = getCharacteristic(boardService,
-      // "0000fff5-0000-1000-8000-00805f9b34fb");
-    inChannel = getCharacteristic(boardService,
-      "0000fff4-0000-1000-8000-00805f9b34fb");
-    outChannel = getCharacteristic(boardService,
-      "0000fff3-0000-1000-8000-00805f9b34fb");
+    inChannel = getCharacteristic(boardService, "0000fff4-0000-1000-8000-00805f9b34fb");
+    outChannel = getCharacteristic(boardService, "0000fff3-0000-1000-8000-00805f9b34fb");
     if (this.inChannel == null || this.outChannel == null) {
       System.err.println("Characteristics not found.");
       device.disconnect();
@@ -77,15 +69,12 @@ class BluetoothDriver {
   }
 
   BluetoothDevice getDevice(String address) throws InterruptedException {
-    BluetoothManager manager = BluetoothManager.getBluetoothManager();
-    BluetoothDevice device = null;
+    var manager = BluetoothManager.getBluetoothManager();
     for (int i = 0; i < 30; ++i) {
-      for (BluetoothDevice d: manager.getDevices()) {
+      for (var d: manager.getDevices()) {
         if (d.getAddress().equals(address))
-          device = d;
+          return d;
       }
-      if (device != null)
-        return device;
       Thread.sleep(BLUETOOTH_RETRY_PERIOD_MILLI);
     }
     return null;
@@ -94,7 +83,7 @@ class BluetoothDriver {
   BluetoothGattService getService(BluetoothDevice device, String UUID) throws InterruptedException {
     BluetoothGattService boardService = null;
     do {
-      for (BluetoothGattService service: device.getServices()) {
+      for (var service: device.getServices()) {
         if (service.getUUID().equals(UUID))
           boardService = service;
       }
@@ -104,7 +93,7 @@ class BluetoothDriver {
   }
 
   BluetoothGattCharacteristic getCharacteristic(BluetoothGattService service, String UUID) {
-    for (BluetoothGattCharacteristic characteristic: service.getCharacteristics()) {
+    for (var characteristic: service.getCharacteristics()) {
       if (characteristic.getUUID().equals(UUID))
         return characteristic;
     }
@@ -149,9 +138,8 @@ class BluetoothDriver {
   private void setChecksum(byte[] arrby) {
     int n2 = 0;
     int n = arrby.length - 1;
-    for (int i = 0; i < n + 0; ++i) {
+    for (int i = 0; i < n + 0; ++i)
       n2 = (byte)(n2 ^ arrby[i]);
-    }
     arrby[n] = (byte)(n2 & 255);
   }
 
@@ -161,20 +149,17 @@ class BluetoothDriver {
     int n2 = arrby.length <= 255 ? 1 : 2;
     byte[] arrby2 = new byte[arrby.length + n2];
     arrby2[0] = (byte)(arrby.length & 255);
-    if (n2 == 2) {
+    if (n2 == 2)
       arrby2[1] = (byte)(255 & arrby.length >> 8);
-    }
-    for (n = 0; n < arrby.length; ++n) {
+    for (n = 0; n < arrby.length; ++n)
       arrby2[n + n2] = arrby[n];
-    }
     int n3;
     n = arrby2.length;
 
     for (n = arrby2.length; n > 0; n -= n3) {
       n3 = 19;
-      if (n <= 19) {
+      if (n <= 19)
         n3 = n;
-      }
       arrby = new byte[n3 + 1];
       arrby[0] = n == arrby2.length ? (n2 == 2 ? (byte)-90 : (byte)-91) : (byte)-89;
       int n4 = 0;
@@ -236,9 +221,8 @@ class BluetoothDriver {
     int n;
     int n2 = 0;
     byte[] arrby = new byte[96];
-    for (n = 0; n < 96; ++n) {
+    for (n = 0; n < 96; ++n)
       arrby[n] = 0;
-    }
     arrby[0] = 1;
     n = 0;
     while (n < 19) {
