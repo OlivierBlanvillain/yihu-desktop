@@ -4,17 +4,9 @@ import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.image.BufferedImage;
 import javax.swing.*;
+import static yihuchess.Config.*;
 
 class ScreenDriver {
-  private static final int INIT_X = 228;
-  private static final int INIT_Y = 56;
-  private static final int INIT_W = 596;
-  private static final int INIT_H = 596;
-
-  private static final int GOBAN_COLOR = 0xFFFDE086;
-  private static final int WHITE_COLOR = 0xFFFFFFFF;
-  private static final int BLACK_COLOR = 0xFF898989;
-
   Rectangle captureRectangle;
   private Object lock;
   private Robot robot;

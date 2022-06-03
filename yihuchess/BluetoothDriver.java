@@ -4,10 +4,9 @@ import tinyb.*;
 import java.util.*;
 import java.awt.Point;
 import java.util.function.Consumer;
+import static yihuchess.Config.*;
 
 class BluetoothDriver {
-  private static final String GOBAN_MAC_ADDRESS = "B4:10:7B:24:1B:4B";
-
   private BluetoothGattCharacteristic inChannel;
   private BluetoothGattCharacteristic outChannel;
 
@@ -18,7 +17,7 @@ class BluetoothDriver {
         allSet = initOnce(callback);
       } catch (BluetoothException e) {
         System.out.println(e.getMessage());
-        Thread.sleep(1000);
+        Thread.sleep(BLUETOOTH_RETRY_PERIOD_MILLI);
       }
     }
   }
@@ -87,7 +86,7 @@ class BluetoothDriver {
       }
       if (device != null)
         return device;
-      Thread.sleep(1000);
+      Thread.sleep(BLUETOOTH_RETRY_PERIOD_MILLI);
     }
     return null;
   }
@@ -99,7 +98,7 @@ class BluetoothDriver {
         if (service.getUUID().equals(UUID))
           boardService = service;
       }
-      Thread.sleep(1000);
+      Thread.sleep(BLUETOOTH_RETRY_PERIOD_MILLI);
     } while (device.getServices().isEmpty());
     return boardService;
   }
@@ -130,17 +129,20 @@ class BluetoothDriver {
     return sendSliced(arrby);
   }
 
-  public boolean setAllLights(int[][] board) {
+  public boolean setAllLights(int[][] board, boolean unicolor) {
     assert(board.length == 19);
-    for (int[] b: board) {
+    for (int[] b: board)
       assert(b.length == 19);
-    }
+    if (unicolor)
+      for (int i = 0; i < 19; ++i)
+        for (int j = 0; j < 19; ++j)
+          if (board[i][j] != Main.EMPTY)
+            board[i][j] = Main.BLACK | Main.WHITE;
+
     int[] flat = new int[19 * 19];
-    for (int i = 0; i < 19; ++i) {
-      for (int j = 0; j < 19; ++j) {
-        flat[i+19*j] = board[i][18 - j];
-      }
-    }
+    for (int i = 0; i < 19; ++i)
+      for (int j = 0; j < 19; ++j)
+        flat[i+19*j] = board[i][18-j];
     return sendSliced(allLightHeaders(allLightsPayload(flat)));
   }
 

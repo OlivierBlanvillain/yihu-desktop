@@ -5,6 +5,7 @@ import tinyb.BluetoothException;
 import java.awt.AWTException;
 import java.awt.Point;
 import java.util.function.Consumer;
+import static yihuchess.Config.*;
 
 public class Main {
   public static int EMPTY = 0;
@@ -26,8 +27,10 @@ public class Main {
       System.out.println(sb.toString());
     };
 
+    if (MANUAL_SCREEN_CAPTURE_SETUP)
+      screenDriver.init();
+
     bluetoothDriver.init(bluetoothCallback);
-    screenDriver.init();
     Thread.sleep(100);
 
     for (;;) {
@@ -36,9 +39,9 @@ public class Main {
         for (;;) {
           int[][] next = screenDriver.screenshot();
           if (equals(prev, next)) {
-            Thread.sleep(50);
+            Thread.sleep(MAIN_LOOP_PERIOD_MILLI);
           } else {
-            boolean ok = bluetoothDriver.setAllLights(next);
+            boolean ok = bluetoothDriver.setAllLights(next, UNICOLOR);
             if (!ok) continue;
             prev = next;
             System.out.println(showBoard(next));
@@ -74,10 +77,10 @@ public class Main {
           sb.append(" +");
         else if (board[i][j] == EMPTY)
           sb.append(" .");
-        else if (board[i][j] == WHITE)
-          sb.append(" o");
         else if (board[i][j] == BLACK)
           sb.append(" x");
+        else
+          sb.append(" o");
       }
       sb.append(' ');
       sb.append(String.valueOf(19 - j));
