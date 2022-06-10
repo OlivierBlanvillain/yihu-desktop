@@ -8,10 +8,10 @@ class Config {
   public static final int MAIN_LOOP_PERIOD_MILLI = 50;
   public static final int BLUETOOTH_RETRY_PERIOD_MILLI = 500;
 
-  public static final int INIT_X = 592;
-  public static final int INIT_Y = 158;
-  public static final int INIT_W = 1064;
-  public static final int INIT_H = 1064;
+  public static final int INIT_X = 421;
+  public static final int INIT_Y = 70;
+  public static final int INIT_W = 1246;
+  public static final int INIT_H = 1246;
 
   public static final int GOBAN_COLOR = 0xFFFDE086;
   public static final int WHITE_COLOR = 0xFFFFFFFF;
