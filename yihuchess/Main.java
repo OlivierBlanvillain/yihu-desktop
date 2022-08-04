@@ -18,44 +18,56 @@ public class Main {
 
     Consumer<Point> bluetoothCallback = (p) -> {
       var sb = new StringBuilder();
-      sb.append("Clicking on ");
+      sb.append("\nClicking on ");
       sb.append(showCoord(p));
       int count = screenDriver.click(p.x, p.y);
       if (count == 0)
         sb.append(" (failed?)");
       else if (count != 1)
         sb.append(" (" + count + "x)");
-      System.out.println(sb.toString());
+      System.out.print(sb.toString());
     };
 
     if (MANUAL_SCREEN_CAPTURE_SETUP)
       screenDriver.init();
 
     bluetoothDriver.init(bluetoothCallback);
-    Thread.sleep(100);
 
+    int[][] prev = null;
     for (;;) {
       try {
-        int[][] prev = new int[19][19];
-        for (;;) {
-          int[][] next = screenDriver.screenshot();
-          if (equals(prev, next)) {
-            Thread.sleep(MAIN_LOOP_PERIOD_MILLI);
-          } else {
-            boolean ok = bluetoothDriver.setAllLights(next, UNICOLOR);
-            if (!ok) continue;
+        var next = screenDriver.screenshot();
+        if (!equals(prev, next)) {
+          var ok = bluetoothDriver.setAllLights(next, UNICOLOR);
+          if (ok) {
+            System.out.print(".");
             prev = next;
-            System.out.println(showBoard(next));
           }
         }
+        if (!bluetoothDriver.isConnected()) {
+          System.out.print("\nReconnecting");
+          bluetoothDriver.connect();
+          prev = null;
+        }
       } catch (BluetoothException e) {
-        System.out.println(e.getMessage());
-        bluetoothDriver.init(bluetoothCallback);
+        var m1 = "GDBus.Error:org.bluez.Error.Failed: Not connected";
+        var m2 = "GDBus.Error:org.bluez.Error.Failed: Operation failed with ATT error: 0x0e";
+        var m3 = "GDBus.Error:org.bluez.Error.Failed: le-connection-abort-by-local";
+        var msg = e.getMessage();
+        if (!msg.equals(m1) && !msg.equals(m2) && !msg.equals(m3)) {
+          System.out.println("");
+          e.printStackTrace();
+          bluetoothDriver.init(bluetoothCallback);
+          prev = null;
+        }
       }
+      Thread.sleep(MAIN_LOOP_PERIOD_MILLI);
     }
   }
 
   private static boolean equals(int[][] prev, int[][] next) {
+    if (prev == null || next == null)
+      return false;
     for (int i = 0; i < 19; ++i)
       for (int j = 0; j < 19; ++j)
         if (next[i][j] != prev[i][j])

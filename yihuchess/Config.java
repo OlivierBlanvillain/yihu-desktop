@@ -5,8 +5,10 @@ class Config {
 
   public static final boolean UNICOLOR = true;
   public static final boolean MANUAL_SCREEN_CAPTURE_SETUP = false;
-  public static final int MAIN_LOOP_PERIOD_MILLI = 50;
+  public static final int MAIN_LOOP_PERIOD_MILLI = 100;
   public static final int BLUETOOTH_RETRY_PERIOD_MILLI = 500;
+  public static final int BLUETOOTH_RETRIES = 20;
+  public static final int MAX_CLICK_ATTEMPS = 10;
 
   public static final int INIT_X = 421;
   public static final int INIT_Y = 70;

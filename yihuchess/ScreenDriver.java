@@ -7,7 +7,7 @@ import javax.swing.*;
 import static yihuchess.Config.*;
 
 class ScreenDriver {
-  Rectangle captureRectangle;
+  private Rectangle captureRectangle;
   private Object lock;
   private Robot robot;
 
@@ -72,7 +72,7 @@ class ScreenDriver {
   public int click(int x, int y) {
     int xCoord = captureRectangle.x + (int)(captureRectangle.width / 18.0 * x);
     int yCoord = captureRectangle.y + (int)(captureRectangle.height / 18.0 * y);
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < MAX_CLICK_ATTEMPS; ++i) {
       robot.mouseMove(xCoord, yCoord);
       robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
       robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);

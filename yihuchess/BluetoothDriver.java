@@ -9,54 +9,60 @@ import static yihuchess.Config.*;
 class BluetoothDriver {
   private BluetoothGattCharacteristic inChannel;
   private BluetoothGattCharacteristic outChannel;
+  private BluetoothDevice device;
 
   public void init(Consumer<Point> callback) throws InterruptedException {
+    if (device != null) {
+      try { device.disconnect(); }
+      catch (BluetoothException e) {}
+      device = null;
+    }
+    if (inChannel != null) {
+      try { inChannel.disableValueNotifications(); }
+      catch (BluetoothException e) {}
+      inChannel = null;
+    }
+    outChannel = null;
+
+    BluetoothManager.getBluetoothManager().startDiscovery();
     boolean allSet = false;
     while (!allSet) {
       try {
         allSet = initOnce(callback);
       } catch (BluetoothException e) {
-        System.out.println(e.getMessage());
+        e.printStackTrace();
         Thread.sleep(BLUETOOTH_RETRY_PERIOD_MILLI);
       }
     }
+    BluetoothManager.getBluetoothManager().stopDiscovery();
+  }
+
+  boolean err(String msg) {
+    System.out.println(msg);
+    return false;
   }
 
   public boolean initOnce(Consumer<Point> callback) throws InterruptedException {
-    var manager = BluetoothManager.getBluetoothManager();
-    if (manager.startDiscovery())
-      System.out.println("Waiting for Bluetooth device...");
-    var device = getDevice(GOBAN_MAC_ADDRESS);
-    manager.stopDiscovery();
-    if (device == null) {
-      System.err.println("Device not found.");
-      return false;
-    }
-    if (device.connect()) {
-      System.out.println("Connected to " + GOBAN_MAC_ADDRESS + ".");
-    } else {
-      System.out.println("Could not connect device.");
-      return false;
-    }
+    System.out.println("Waiting for Bluetooth device...");
+    device = getDevice(GOBAN_MAC_ADDRESS);
+    if (device == null)
+      return err("Device not found.");
+    if (!connect())
+      return err("Could not connect to the device.");
+    System.out.println("Connected to " + device.getName() + ".");
 
-    var boardService = getService(device, "0000fff0-0000-1000-8000-00805f9b34fb");
-    if (boardService == null) {
-      System.err.println("Service not found.");
-      device.disconnect();
-      return false;
-    } else {
-      System.out.println("Found service " + boardService.getUUID() + ".");
-    }
+    if(!resolveServices())
+      return err("Service resolution failed.");
+    var boardService = getService("0000fff0-0000-1000-8000-00805f9b34fb");
+    if (boardService == null)
+      return err("Service not found.");
+    System.out.println("Service found.");
 
     inChannel = getCharacteristic(boardService, "0000fff4-0000-1000-8000-00805f9b34fb");
     outChannel = getCharacteristic(boardService, "0000fff3-0000-1000-8000-00805f9b34fb");
-    if (this.inChannel == null || this.outChannel == null) {
-      System.err.println("Characteristics not found.");
-      device.disconnect();
-      return false;
-    } else {
-      System.out.println("Found characteristics.");
-    }
+    if (this.inChannel == null || this.outChannel == null)
+      return err("Characteristics not found.");
+    System.out.println("Characteristics found.");
 
     inChannel.enableValueNotifications((arrby) -> {
       if (arrby.length == 12)
@@ -68,32 +74,48 @@ class BluetoothDriver {
 
   BluetoothDevice getDevice(String address) throws InterruptedException {
     var manager = BluetoothManager.getBluetoothManager();
-    for (int i = 0; i < 30; ++i) {
-      for (var d: manager.getDevices()) {
+    for (var i = 0; i < BLUETOOTH_RETRIES; ++i) {
+      for (var d: manager.getDevices())
         if (d.getAddress().equals(address))
           return d;
-      }
       Thread.sleep(BLUETOOTH_RETRY_PERIOD_MILLI);
     }
     return null;
   }
 
-  BluetoothGattService getService(BluetoothDevice device, String UUID) throws InterruptedException {
-    BluetoothGattService boardService = null;
-    do {
-      for (var service: device.getServices()) {
-        if (service.getUUID().equals(UUID))
-          boardService = service;
-      }
-      Thread.sleep(BLUETOOTH_RETRY_PERIOD_MILLI);
-    } while (device.getServices().isEmpty());
-    return boardService;
+  boolean connect() {
+    return device.connect();
   }
 
-  BluetoothGattCharacteristic getCharacteristic(BluetoothGattService service, String UUID) {
-    for (var characteristic: service.getCharacteristics()) {
-      if (characteristic.getUUID().equals(UUID))
-        return characteristic;
+  boolean isConnected() {
+    return device.getConnected();
+  }
+
+  boolean resolveServices() throws InterruptedException {
+    for (var i = 0; i < BLUETOOTH_RETRIES; ++i) {
+      if (device.getServicesResolved())
+        return true;
+      Thread.sleep(BLUETOOTH_RETRY_PERIOD_MILLI);
+    }
+    return false;
+  }
+
+  BluetoothGattService getService(String uuid) throws InterruptedException {
+    for (var i = 0; i < BLUETOOTH_RETRIES; ++i) {
+      for (var s: device.getServices())
+        if (s.getUUID().equals(uuid))
+          return s;
+      Thread.sleep(BLUETOOTH_RETRY_PERIOD_MILLI);
+    }
+    return null;
+  }
+
+  BluetoothGattCharacteristic getCharacteristic(BluetoothGattService service, String uuid) throws InterruptedException {
+    for (var i = 0; i < BLUETOOTH_RETRIES; ++i) {
+      for (var c: service.getCharacteristics())
+        if (c.getUUID().equals(uuid))
+          return c;
+      Thread.sleep(BLUETOOTH_RETRY_PERIOD_MILLI);
     }
     return null;
   }
@@ -102,16 +124,14 @@ class BluetoothDriver {
     assert(board.length == 19);
     for (int[] b: board)
       assert(b.length == 19);
-    if (unicolor)
-      for (int i = 0; i < 19; ++i)
-        for (int j = 0; j < 19; ++j)
-          if (board[i][j] != Main.EMPTY)
-            board[i][j] = Main.BLACK | Main.WHITE;
-
     int[] flat = new int[19 * 19];
     for (int i = 0; i < 19; ++i)
-      for (int j = 0; j < 19; ++j)
-        flat[i+19*j] = board[i][18-j];
+      for (int j = 0; j < 19; ++j) {
+        var s = board[i][18-j];
+        if (unicolor && s != Main.EMPTY)
+          s = Main.BLACK | Main.WHITE;
+        flat[i+19*j] = s;
+      }
     return sendSliced(allLightHeaders(allLightsPayload(flat)));
   }
 
@@ -148,12 +168,11 @@ class BluetoothDriver {
         arrby[n5] = arrby2[arrby2.length - n + n4];
         n4 = n5;
       }
-      if (outChannel != null) {
-        for (n4 = 4; n4 >= 0 && !outChannel.writeValue(arrby); --n4) {
-        }
-        if (n4 >= 0) continue;
-      }
-      return false;
+      if (outChannel == null || !isConnected())
+        return false;
+      var ok = outChannel.writeValue(arrby);
+      if (!ok)
+        return false;
     }
     return true;
   }
