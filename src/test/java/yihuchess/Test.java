@@ -23,7 +23,7 @@ class Test {
     Config.INIT_H = 596;
 
     test(Tygem.calls());
-    test(Tygem.calls());
+    fixpoint(Tygem.calls());
   }
 
   static void test(ArrayDeque<Call> calls) throws IOException, AWTException {
@@ -34,6 +34,30 @@ class Test {
       Main.loop(new Screen(r), new Bluetooth(m));
     } catch (Replay.EndOfReplay e) {
       System.out.println(ANSI_GREEN + "\nTygem test passed!\n" + ANSI_RESET);
+    }
+  }
+
+  static void fixpoint(ArrayDeque<Call> calls) throws IOException, AWTException {
+    var recorded = new ArrayDeque<Call>();
+    Replay.init(calls.clone());
+    Record.init((c) -> { recorded.addLast(c); });
+
+    try {
+      var r = Record.record(Replay.replay(Robot.class));
+      var m = Record.record(Replay.replay(BluetoothManager.class));
+      Main.loop(new Screen(r), new Bluetooth(m));
+    } catch (EndOfReplay x) {
+      var actual = recorded.toArray();
+      var expected = calls.toArray();
+      for (var i = 0; i < Math.max(actual.length, expected.length); ++i) {
+        var a = serialize(actual[i]);
+        var e = serialize(expected[i]);
+        if (!a.equals(e)) {
+          System.out.println(String.format("\n  A: %s\n  E: %s", a, e));
+          throw new AssertionError();
+        }
+      }
+      System.out.println(ANSI_GREEN + "\nMeta test passed!\n" + ANSI_RESET);
     }
   }
 }
