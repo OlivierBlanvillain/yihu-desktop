@@ -43,12 +43,12 @@ class Main {
             var newColor = next[newStone.x][newStone.y];
             var ok = bluetooth.setLight(newStone.x, newStone.y, newColor);
             if (!ok) continue;
-            System.out.print(",");
+            System.out.print(MANUAL_SCREEN_CAPTURE_SETUP ? showBoard(next) : ",");
           }
           if (added != 1 || removed != 0) {
             var ok = bluetooth.setAllLights(next);
             if (!ok) continue;
-            System.out.print(".");
+            System.out.print(MANUAL_SCREEN_CAPTURE_SETUP ? showBoard(next) : ".");
           }
           prev = next;
         }
@@ -92,5 +92,33 @@ class Main {
         if (next[i][j] == 0 && next[i][j] != prev[i][j])
           ++count;
     return count;
+  }
+
+  private static String showBoard(int[][] board) {
+    var sb = new StringBuilder();
+    sb.append("\n");
+    sb.append("   a b c d e f g h j k l m n o p q r s t\n");
+    for (int j = 0; j < 19; ++j) {
+      if (19 - j < 10)
+        sb.append(' ');
+      sb.append(String.valueOf(19 - j));
+      for (int i = 0; i < 19; ++i) {
+        boolean oshiI = i == 3 || i == 9 || i == 15;
+        boolean oshiJ = j == 3 || j == 9 || j == 15;
+        if (board[i][j] == 0 && oshiI && oshiJ)
+          sb.append(" +");
+        else if (board[i][j] == 0)
+          sb.append(" .");
+        else if (board[i][j] == 1)
+          sb.append(" x");
+        else
+          sb.append(" o");
+      }
+      sb.append(' ');
+      sb.append(String.valueOf(19 - j));
+      sb.append('\n');
+    }
+    sb.append("   a b c d e f g h j k l m n o p q r s t\n");
+    return sb.toString();
   }
 }

@@ -11,10 +11,10 @@ class Config {
   static int BLUETOOTH_TIMEOUT_MILLI = 2000;
   static int MAX_CLICK_ATTEMPS = 10;
 
-  static int INIT_X = 421;
-  static int INIT_Y = 70;
-  static int INIT_W = 1246;
-  static int INIT_H = 1246;
+  static int INIT_X = 143;
+  static int INIT_Y = 50;
+  static int INIT_W = 614;
+  static int INIT_H = 618;
 
   static int GOBAN_COLOR = 0xFFFDE086;
   static int WHITE_COLOR = 0xFFFFFFFF;
