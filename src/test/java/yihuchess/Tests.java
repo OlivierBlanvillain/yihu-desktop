@@ -13,8 +13,6 @@ import static yihuchess.Replay.EndOfReplay;
 import static yihuchess.Serialize.serialize;
 
 class Tests {
-  static String ANSI_GREEN = "\u001B[32m";
-  static String ANSI_RESET = "\u001B[0m";
 
   public static void main(String[] args) throws IOException, AWTException {
     Config.INIT_X = 228;
@@ -23,18 +21,25 @@ class Tests {
     Config.INIT_H = 596;
     Config.MAIN_LOOP_PERIOD_MILLI = 1000;
 
-    integration(Tygem.calls());
-    fixpoint(Tygem.calls());
+    integration(Tygem.middlegame(), "Middle game position");
+    integration(Tygem.joseki(), "Joseki");
+    fixpoint(Tygem.middlegame());
   }
 
-  static void integration(ArrayDeque<Call> calls) throws IOException, AWTException {
+  static void celebrate(String testName) {
+    var ANSI_GREEN = "\u001B[32m";
+    var ANSI_RESET = "\u001B[0m";
+    System.out.println(ANSI_GREEN + "\n" + testName + " test passed!" + ANSI_RESET);
+  }
+
+  static void integration(ArrayDeque<Call> calls, String testName) throws IOException, AWTException {
     Replay.init(calls);
     try {
       var r = Replay.replay(Robot.class);
       var m = Replay.replay(BluetoothManager.class);
       Main.loop(new Screen(r), new Bluetooth(m));
     } catch (EndOfReplay e) {
-      System.out.println(ANSI_GREEN + "\nIntegration test passed!" + ANSI_RESET);
+      celebrate(testName);
     }
   }
 
@@ -58,7 +63,7 @@ class Tests {
           throw new AssertionError();
         }
       }
-      System.out.println(ANSI_GREEN + "\nMeta test passed!" + ANSI_RESET);
+      celebrate("Meta");
     }
   }
 }

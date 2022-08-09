@@ -10,7 +10,46 @@ import static yihuchess.Replay.replay;
 import static yihuchess.Serialize.img;
 
 class Tygem {
-  static ArrayDeque<Call> calls() {
+  static ArrayDeque<Call> middlegame() {
+    return new ArrayDeque<>(Arrays.asList(new Call[] {
+      new Call("BluetoothManager.startDiscovery", true),
+      new Call("BluetoothManager.find", replay(BluetoothDevice.class), null, "B4:10:7B:24:1B:4B", null, Duration.ofMillis(2000)),
+      new Call("BluetoothDevice.connect", true),
+      new Call("BluetoothDevice.getName", "YiHu-WBAL0mR"),
+      new Call("BluetoothManager.find", replay(BluetoothGattService.class), null, "0000fff0-0000-1000-8000-00805f9b34fb", null, Duration.ofMillis(2000)),
+      new Call("BluetoothManager.find", replay(BluetoothGattCharacteristic.class), null, "0000fff4-0000-1000-8000-00805f9b34fb", null, Duration.ofMillis(2000)),
+      new Call("BluetoothManager.find", replay(BluetoothGattCharacteristic.class), null, "0000fff3-0000-1000-8000-00805f9b34fb", null, Duration.ofMillis(2000)),
+      new Call("BluetoothGattCharacteristic.enableValueNotifications", null, replay(BluetoothNotification.class)),
+      new Call("BluetoothManager.stopDiscovery", true),
+      new Call("BluetoothGattCharacteristic.writeValue", true, new byte[] {-91,105,35,66,105,22,0,36,0,1,0,0,0,0,0,0,0,0,0,0}),
+      new Call("BluetoothNotification.run", null, new byte[] {35,86,10,4,0,0,0,118,2,0}),
+      new Call("BluetoothGattCharacteristic.writeValue", true, new byte[] {-89,0,0,0,0,0,-8,-1,0,-8,-1,-8,-1,0,-8,-1,-8,-1,0,-8}),
+      new Call("BluetoothGattCharacteristic.writeValue", true, new byte[] {-89,-1,56,-32,0,56,-32,56,-32,0,56,-32,56,-32,0,56,-32,56,-32,0}),
+      new Call("BluetoothGattCharacteristic.writeValue", true, new byte[] {-89,56,-32,56,-32,0,56,-32,56,-32,0,56,-32,56,-32,0,56,-32,-8,-1}),
+      new Call("BluetoothNotification.run", null, new byte[] {35,86,10,5,0,0,0,118,2,0}),
+      new Call("BluetoothGattCharacteristic.writeValue", true, new byte[] {-89,0,-8,-1,-8,-1,0,-8,-1,-8,-1,0,-8,-1,0,0,0,0,0,0}),
+      new Call("BluetoothGattCharacteristic.writeValue", true, new byte[] {-89,0,0,0,0,0,0,0,0,0,22,45}),
+      new Call("BluetoothNotification.run", null, new byte[] {35,73,10,6,0,0,0,85,-1,0}),
+      new Call("BluetoothDevice.getConnected", true),
+      new Call("Robot.createScreenCapture", img("668257457.png"), new Rectangle(228,56,596,596)),
+      new Call("BluetoothGattCharacteristic.writeValue", true, new byte[] {-91,105,35,66,105,22,0,36,0,1,0,0,0,0,0,0,-104,0,0,-104}),
+      new Call("BluetoothNotification.run", null, new byte[] {35,86,10,7,0,36,0,118,2,0}),
+      new Call("BluetoothGattCharacteristic.writeValue", true, new byte[] {-89,12,57,33,12,57,12,-96,0,12,-96,4,0,0,4,0,28,0,33,28}),
+      new Call("BluetoothGattCharacteristic.writeValue", true, new byte[] {-89,0,24,0,0,24,0,12,0,0,12,0,0,0,0,0,0,0,0,0}),
+      new Call("BluetoothGattCharacteristic.writeValue", true, new byte[] {-89,0,0,4,0,0,4,0,0,0,0,0,0,52,0,0,52,0,78,32}),
+      new Call("BluetoothGattCharacteristic.writeValue", true, new byte[] {-89,33,78,32,60,-128,0,60,-128,88,-64,0,88,-64,26,-56,33,26,-56,56}),
+      new Call("BluetoothGattCharacteristic.writeValue", true, new byte[] {-89,0,33,56,0,0,0,0,0,0,55,45}),
+      new Call("BluetoothNotification.run", null, new byte[] {35,86,10,8,0,36,0,118,2,0}),
+      new Call("BluetoothNotification.run", null, new byte[] {35,86,10,9,0,36,0,118,2,0}),
+      new Call("BluetoothDevice.getConnected", true),
+      new Call("Robot.createScreenCapture", img("668257457.png"), new Rectangle(228,56,596,596)),
+      new Call("BluetoothNotification.run", null, new byte[] {35,73,10,10,0,36,0,82,-1,0}),
+      new Call("BluetoothDevice.getConnected", true),
+      new Call("Robot.createScreenCapture", img("668257457.png"), new Rectangle(228,56,596,596))
+    }));
+  }
+
+  static ArrayDeque<Call> joseki() {
     return new ArrayDeque<>(Arrays.asList(new Call[] {
       new Call("BluetoothManager.startDiscovery", true),
       new Call("BluetoothManager.find", replay(BluetoothDevice.class), null, "B4:10:7B:24:1B:4B", null, Duration.ofMillis(2000)),
