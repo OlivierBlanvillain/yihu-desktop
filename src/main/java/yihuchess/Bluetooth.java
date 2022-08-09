@@ -97,20 +97,17 @@ class Bluetooth {
   }
 
   boolean sendSliced(byte[] arrby) {
-    var n2 = arrby.length <= 255 ? 1 : 2;
-    var arrby2 = new byte[arrby.length + n2];
+    var arrby2 = new byte[arrby.length + 1];
     arrby2[0] = (byte)(arrby.length & 255);
-    if (n2 == 2)
-      arrby2[1] = (byte)(255 & arrby.length >> 8);
     for (var n = 0; n < arrby.length; ++n)
-      arrby2[n + n2] = arrby[n];
+      arrby2[n + 1] = arrby[n];
     var n = arrby2.length;
     for (int n3; n > 0; n -= n3) {
       n3 = 19;
       if (n <= 19)
         n3 = n;
       arrby = new byte[n3 + 1];
-      arrby[0] = n == arrby2.length ? (byte)(n2 == 2 ? -90 : -91) : -89;
+      arrby[0] = (byte)(n == arrby2.length ? -91 : -89);
       var n4 = 0;
       while (n4 < n3) {
         var n5 = n4 + 1;
@@ -166,60 +163,25 @@ class Bluetooth {
       n2 = n + 342 + 1;
       for (var i = 18; i >= 0; --i) {
         var object = board[n2-1];
-        if (i <= 18 && i > 10) {
-          if (object != 1) {
-            if (object != 2) {
-              if (object == 3) {
-                var n4 = (int) arrby[n3];
-                object = 1 << 18 - i;
-                arrby[n3] = (byte)(n4 | object);
-                n4 = n3 + 3;
-                arrby[n4] = (byte)(object | arrby[n4]);
-              }
-            } else {
-              object = n3 + 3;
-              arrby[object] = (byte)(arrby[object] | 1 << 18 - i);
-            }
-          } else {
-            arrby[n3] = (byte)(arrby[n3] | 1 << 18 - i);
-          }
+        if (object == 3 && i > 10) {
+          var n4 = (int) arrby[n3];
+          object = 1 << 18 - i;
+          arrby[n3] = (byte)(n4 | object);
+          n4 = n3 + 3;
+          arrby[n4] = (byte)(object | arrby[n4]);
         }
-        if (i <= 10 && i > 2) {
-          if (object != 1) {
-            if (object != 2) {
-              if (object == 3) {
-                var n5 = n3 + 1;
-                var n4 = (int) arrby[n5];
-                object = 1 << 10 - i;
-                arrby[n5] = (byte)(n4 | object);
-                n4 = n3 + 4;
-                arrby[n4] = (byte)(object | arrby[n4]);
-              }
-            } else {
-              object = n3 + 4;
-              arrby[object] = (byte)(1 << 10 - i | arrby[object]);
-            }
-          } else {
-            object = n3 + 1;
-            arrby[object] = (byte)(1 << 10 - i | arrby[object]);
-          }
+        if (object == 3 && i > 2) {
+          var n5 = n3 + 1;
+          var n4 = (int) arrby[n5];
+          object = 1 << 10 - i;
+          arrby[n5] = (byte)(n4 | object);
+          n4 = n3 + 4;
+          arrby[n4] = (byte)(object | arrby[n4]);
         }
-        if (i <= 2) {
-          if (object != 1) {
-            if (object != 2) {
-              if (object == 3) {
-                object = n3 + 2;
-                arrby[object] = (byte)(arrby[object] | 1 << 2 - i);
-                arrby[object] = (byte)(arrby[object] | 1 << 7 - i);
-              }
-            } else {
-              object = n3 + 2;
-              arrby[object] = (byte)(arrby[object] | 1 << 7 - i);
-            }
-          } else {
-            object = n3 + 2;
-            arrby[object] = (byte)(arrby[object] | 1 << 2 - i);
-          }
+        if (object == 3) {
+          object = n3 + 2;
+          arrby[object] = (byte)(arrby[object] | 1 << 2 - i);
+          arrby[object] = (byte)(arrby[object] | 1 << 7 - i);
         }
         n2 -= 19;
       }
