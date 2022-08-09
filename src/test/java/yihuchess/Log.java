@@ -15,21 +15,47 @@ class Log {
     }
   }
 
+  static boolean isLogging() {
+    return file != null;
+  }
+
+  static void unindented(Object s) {
+    println(s);
+    flush();
+  }
+
   static void log() {
-    var trace = Thread.currentThread().getStackTrace();
-    log(trace[2], trace);
+    var stack = Thread.currentThread().getStackTrace();
+    print(" ".repeat(stack.length));
+    println(stack[2]);
+    flush();
   }
 
   static void log(Object s) {
-    var trace = Thread.currentThread().getStackTrace();
-    log(trace[2], trace);
-    log("> " + s, trace);
+    var stack = Thread.currentThread().getStackTrace();
+    print(" ".repeat(stack.length));
+    println(stack[2]);
+    print(" ".repeat(stack.length));
+    println("> " + s);
+    flush();
   }
 
-  static void log(Object s, StackTraceElement[] trace) {
+  static void println(Object obj) {
+    print(obj.toString() + '\n');
+  }
+
+  static void print(Object obj) {
     if (file != null)
       try {
-        file.append(" ".repeat(trace.length) + s + '\n');
+        file.append(obj.toString());
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+  }
+
+  static void flush() {
+    if (file != null)
+      try {
         file.flush();
       } catch (IOException e) {
         throw new UncheckedIOException(e);

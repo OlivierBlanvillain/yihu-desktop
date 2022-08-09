@@ -16,7 +16,7 @@ import static yihuchess.Serialize.serialize;
 
 class Record {
   static String CALLBACK_NAME = "BluetoothNotification.run";
-  static Consumer<Call> store;
+  static Consumer<Call> storage;
 
   public static void main(String[] args) throws AWTException, IOException {
     Config.MAIN_LOOP_PERIOD_MILLI = 1000;
@@ -35,7 +35,7 @@ class Record {
   }
 
   static void init(Consumer<Call> cc) {
-    Record.store = cc;
+    Record.storage = cc;
   }
 
   @SuppressWarnings("unchecked")
@@ -50,12 +50,14 @@ class Record {
         if (i.getMethodName().equals("enableValueNotifications"))
           hijackValueNotifications(i);
 
-        var result = i.invoke();
-        store.accept(new Call(callName(i), result, i.getParameters()));
-        if (result instanceof BluetoothObject)
-          return record(result);
-        else
-          return result;
+        synchronized(storage) {
+          var result = i.invoke();
+          storage.accept(new Call(callName(i), result, i.getParameters()));
+          if (result instanceof BluetoothObject)
+            return record(result);
+          else
+            return result;
+        }
       })
       .get();
   }
@@ -64,8 +66,10 @@ class Record {
   static void hijackValueNotifications(Invocation i) {
     BluetoothNotification<byte[]> arg0 = (BluetoothNotification<byte[]>) i.getParameter0();
     BluetoothNotification<byte[]> new0 = (arr) -> {
-      store.accept(new Call(CALLBACK_NAME, null, arr));
-      arg0.run(arr);
+      synchronized(storage) {
+        storage.accept(new Call(CALLBACK_NAME, null, arr));
+        arg0.run(arr);
+      }
     };
     i.getParameters()[0] = new0;
   }

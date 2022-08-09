@@ -12,7 +12,7 @@ import tinyb.*;
 import static yihuchess.Replay.EndOfReplay;
 import static yihuchess.Serialize.serialize;
 
-class Test {
+class Tests {
   static String ANSI_GREEN = "\u001B[32m";
   static String ANSI_RESET = "\u001B[0m";
 
@@ -21,25 +21,26 @@ class Test {
     Config.INIT_Y = 56;
     Config.INIT_W = 596;
     Config.INIT_H = 596;
+    Config.MAIN_LOOP_PERIOD_MILLI = 1000;
 
-    test(Tygem.calls());
+    integration(Tygem.calls());
     fixpoint(Tygem.calls());
   }
 
-  static void test(ArrayDeque<Call> calls) throws IOException, AWTException {
+  static void integration(ArrayDeque<Call> calls) throws IOException, AWTException {
     Replay.init(calls);
     try {
       var r = Replay.replay(Robot.class);
       var m = Replay.replay(BluetoothManager.class);
       Main.loop(new Screen(r), new Bluetooth(m));
-    } catch (Replay.EndOfReplay e) {
-      System.out.println(ANSI_GREEN + "\nTygem test passed!\n" + ANSI_RESET);
+    } catch (EndOfReplay e) {
+      System.out.println(ANSI_GREEN + "\nIntegration test passed!" + ANSI_RESET);
     }
   }
 
   static void fixpoint(ArrayDeque<Call> calls) throws IOException, AWTException {
     var recorded = new ArrayDeque<Call>();
-    Replay.init(calls.clone());
+    Replay.init(calls);
     Record.init((c) -> { recorded.addLast(c); });
 
     try {
@@ -47,17 +48,17 @@ class Test {
       var m = Record.record(Replay.replay(BluetoothManager.class));
       Main.loop(new Screen(r), new Bluetooth(m));
     } catch (EndOfReplay x) {
-      var actual = recorded.toArray();
-      var expected = calls.toArray();
+      var actual = recorded.toArray(new Call[recorded.size()]);
+      var expected = calls.toArray(new Call[calls.size()]);
       for (var i = 0; i < Math.max(actual.length, expected.length); ++i) {
         var a = serialize(actual[i]);
         var e = serialize(expected[i]);
         if (!a.equals(e)) {
-          System.out.println(String.format("\n  A: %s\n  E: %s", a, e));
+          System.out.println(String.format("\n  %s,\n  %s (%s)", a, e, expected[i].pos));
           throw new AssertionError();
         }
       }
-      System.out.println(ANSI_GREEN + "\nMeta test passed!\n" + ANSI_RESET);
+      System.out.println(ANSI_GREEN + "\nMeta test passed!" + ANSI_RESET);
     }
   }
 }

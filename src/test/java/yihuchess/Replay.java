@@ -12,7 +12,7 @@ class Replay {
 
   static void init(ArrayDeque<Call> q) {
     callback = null;
-    mutableQ = q;
+    mutableQ = q.clone();
   }
 
   @SuppressWarnings("unchecked")
@@ -27,8 +27,10 @@ class Replay {
         if (i.getMethodName().equals("enableValueNotifications"))
           callback = (BluetoothNotification<Object>) i.getParameter0();
 
-        while (!mutableQ.isEmpty() && mutableQ.peekFirst().name.equals(Record.CALLBACK_NAME))
-          callback.run(mutableQ.removeFirst().args[0]);
+        while (!mutableQ.isEmpty() && mutableQ.peekFirst().name.equals(Record.CALLBACK_NAME)) {
+          var call = mutableQ.removeFirst();
+          callback.run(call.args[0]);
+        }
         if (mutableQ.isEmpty())
           throw new EndOfReplay();
 
@@ -36,10 +38,11 @@ class Replay {
         var actual = new Call(Record.callName(i), expected.result, i.getParameters());
         var a = serialize(actual);
         var e = serialize(expected);
-        if (!a.equals(e))
-          throw new AssertionError(String.format("\n  A: %s\n  E: %s\n  %s", a, e, expected.pos));
-        else
-          return expected.result;
+        if (!a.equals(e)) {
+          System.out.println(String.format("\n  %s,\n  %s (%s)", a, e, expected.pos));
+          throw new AssertionError();
+        }
+        return expected.result;
       })
       .get();
   }

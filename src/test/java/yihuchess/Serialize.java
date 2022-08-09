@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Objects;
 import javax.imageio.ImageIO;
 import tinyb.*;
 
@@ -38,7 +39,7 @@ class Serialize {
       return serializeBufferedImage((BufferedImage) obj);
     if (obj instanceof Duration)
       return String.format("Duration.ofMillis(%s)", ((Duration) obj).toMillis());
-    if (obj == null)
+    if (Objects.isNull(obj))
       return "null";
     throw new IllegalArgumentException(
       String.format("Missing serialization for %s (%s)", obj, obj.getClass()));

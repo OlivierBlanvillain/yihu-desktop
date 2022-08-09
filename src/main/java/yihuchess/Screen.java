@@ -71,9 +71,9 @@ class Screen {
         var candidates = new int[] { GOBAN_COLOR, WHITE_COLOR, BLACK_COLOR };
         var closest = closestColor(pixel, candidates);
         if (closest == WHITE_COLOR)
-          output[x][y] = Main.WHITE;
+          output[x][y] = 2;
         else if (closest == BLACK_COLOR)
-          output[x][y] = Main.BLACK;
+          output[x][y] = 1;
       }
     }
     return output;
@@ -86,7 +86,7 @@ class Screen {
       robot.mouseMove(xCoord, yCoord);
       robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
       robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-      if (screenshot()[x][y] != Main.EMPTY)
+      if (screenshot()[x][y] != 0)
         return i;
     }
     return 0;

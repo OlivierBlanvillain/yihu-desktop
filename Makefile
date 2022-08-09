@@ -17,7 +17,7 @@ testCompile: $(shell find src -name "*.java" -type f)
 	javac -d target/test -Xlint:all -cp lib/*:$(TINYB) $^
 
 test: testCompile FORCE
-	$(RUN_COMMAND) -cp lib/*:$(TINYB):target/test yihuchess/Test
+	$(RUN_COMMAND) -cp lib/*:$(TINYB):target/test yihuchess/Tests
 
 record: testCompile FORCE
 	$(RUN_COMMAND) -cp lib/*:$(TINYB):target/test yihuchess/Record

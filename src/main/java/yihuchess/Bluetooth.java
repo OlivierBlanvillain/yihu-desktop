@@ -35,7 +35,7 @@ class Bluetooth {
   }
 
   void initOnce(Consumer<Point> callback) throws IOException {
-    System.out.println("Waiting for Bluetooth device...");
+    System.out.println("\nWaiting for Bluetooth device...");
     device = find(GOBAN_MAC_ADDRESS, "Device not found.");
     if (!device.connect())
       throw new IOException("Could not connect to the device.");
@@ -76,13 +76,13 @@ class Bluetooth {
     return device.getConnected();
   }
 
-  boolean setAllLights(int[][] board, boolean unicolor) {
+  boolean setAllLights(int[][] board) {
     var flat = new int[19 * 19];
     for (var i = 0; i < 19; ++i)
       for (var j = 0; j < 19; ++j) {
         var s = board[i][18-j];
-        if (unicolor && s != Main.EMPTY)
-          s = Main.BLACK | Main.WHITE;
+        if (UNICOLOR && s != 0)
+          s = 3;
         flat[i+19*j] = s;
       }
     return sendSliced(allLightHeaders(allLightsPayload(flat)));

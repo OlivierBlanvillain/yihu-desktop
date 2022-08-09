@@ -10,10 +10,6 @@ import static yihuchess.Config.*;
 import tinyb.BluetoothManager;
 
 class Main {
-  static int EMPTY = 0;
-  static int BLACK = 1;
-  static int WHITE = 2;
-
   public static void main(String[] args) throws AWTException {
     loop(new Screen(new Robot()), new Bluetooth(BluetoothManager.getBluetoothManager()));
   }
@@ -24,31 +20,27 @@ class Main {
 
     Consumer<Point> bluetoothCallback = (p) -> {
       int c = screen.click(p.x, p.y);
-      var sb = new StringBuilder();
       var coord = (char)('A' + p.x + (p.x > 7 ? 1 : 0)) + "" + (19 - p.y);
       var count = c == 0 ? " (failed?)" : c > 1 ? " ("+c+"x)" : "";
       System.out.print("\nClicking on " + coord + count);
     };
     bluetooth.init(bluetoothCallback);
+    bluetooth.setAllLights(SPLASH);
 
-    var empty = new int[19][19];
-    empty[0][0] = 1;
-
-    int[][] prev = empty;
+    int[][] prev = SPLASH;
     for (;;) {
       try {
         if (!bluetooth.isConnected()) {
           System.out.print("\nReconnecting");
           bluetooth.connect();
-          prev = empty;
-        } else {
-          var next = screen.screenshot();
-          if (!Arrays.deepEquals(prev, next)) {
-            var ok = bluetooth.setAllLights(next, UNICOLOR);
-            if (ok) {
-              System.out.print(".");
-              prev = next;
-            }
+          prev = SPLASH;
+        }
+        var next = screen.screenshot();
+        if (!Arrays.deepEquals(prev, next)) {
+          var ok = bluetooth.setAllLights(next);
+          if (ok) {
+            System.out.print(".");
+            prev = next;
           }
         }
       } catch (BluetoothException e) {
@@ -60,7 +52,7 @@ class Main {
           System.out.println("");
           e.printStackTrace();
           bluetooth.init(bluetoothCallback);
-          prev = empty;
+          prev = SPLASH;
         }
       }
       screen.sleep(MAIN_LOOP_PERIOD_MILLI);
