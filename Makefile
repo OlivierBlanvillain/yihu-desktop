@@ -25,7 +25,7 @@ test: testCompile FORCE
 record: testCompile FORCE
 	$(RUN_COMMAND) $(TEST_CLASSPATH) yihuchess/Record
 
-coverage: testCompile FORCE
+coverage: clean testCompile FORCE
 	$(RUN_COMMAND) $(TEST_CLASSPATH) $(COVERAGE_AGENT) yihuchess/Tests
 	java -jar lib/jacococli.jar report target/coverage.exec --sourcefiles src/main/java --classfiles target/ --html target/coverage/
 

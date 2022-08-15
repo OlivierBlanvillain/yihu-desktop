@@ -19,9 +19,9 @@ class Tests {
     Config.INIT_Y = 56;
     Config.INIT_W = 596;
     Config.INIT_H = 596;
-    Config.MAIN_LOOP_PERIOD_MILLI = 1000;
 
     integration(Tygem.middlegame(), "Middle game position");
+    integration(Tygem.capture(), "Capture");
     integration(Tygem.joseki(), "Joseki");
     fixpoint(Tygem.middlegame());
   }
@@ -29,7 +29,7 @@ class Tests {
   static void celebrate(String testName) {
     var ANSI_GREEN = "\u001B[32m";
     var ANSI_RESET = "\u001B[0m";
-    System.out.println(ANSI_GREEN + "\n" + testName + " test passed!" + ANSI_RESET);
+    System.out.println(ANSI_GREEN + "\n" + testName + " test passed!\n" + ANSI_RESET);
   }
 
   static void integration(ArrayDeque<Call> calls, String testName) throws IOException, AWTException {

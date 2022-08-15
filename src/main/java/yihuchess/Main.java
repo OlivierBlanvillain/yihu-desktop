@@ -25,23 +25,32 @@ class Main {
       System.out.print("\nClicking on " + coord + count);
     };
     bluetooth.init(bluetoothCallback);
-    bluetooth.setAllLights(SPLASH);
 
-    int[][] prev = SPLASH;
+    int[][] prev = new int[19][19];
     for (;;) {
       try {
         if (!bluetooth.isConnected()) {
           System.out.print("\nReconnecting");
           bluetooth.connect();
-          prev = SPLASH;
+          prev = new int[19][19];
         }
         var next = screen.screenshot();
         if (!Arrays.deepEquals(prev, next)) {
-          var ok = bluetooth.setAllLights(next);
-          if (ok) {
-            System.out.print(".");
-            prev = next;
+          var added = countAdded(prev, next);
+          var removed = countRemoved(prev, next);
+          if (added == 1) {
+            var newStone = singleNewStone(prev, next);
+            var newColor = next[newStone.x][newStone.y];
+            var ok = bluetooth.setLight(newStone.x, newStone.y, newColor);
+            if (!ok) continue;
+            System.out.print(",");
           }
+          if (added != 1 || removed != 0) {
+            var ok = bluetooth.setAllLights(next);
+            if (!ok) continue;
+            System.out.print(".");
+          }
+          prev = next;
         }
       } catch (BluetoothException e) {
         var m1 = "GDBus.Error:org.bluez.Error.Failed: Not connected";
@@ -52,10 +61,36 @@ class Main {
           System.out.println("");
           e.printStackTrace();
           bluetooth.init(bluetoothCallback);
-          prev = SPLASH;
+          prev = new int[19][19];
         }
       }
       screen.sleep(MAIN_LOOP_PERIOD_MILLI);
     }
+  }
+
+  static Point singleNewStone(int[][] prev, int[][] next) {
+    for (var i = 0; i < 19; ++i)
+      for (var j = 0; j < 19; ++j)
+        if (next[i][j] != 0 && next[i][j] != prev[i][j])
+          return new Point(i, j);
+    throw new IllegalArgumentException();
+  }
+
+  static int countAdded(int[][] prev, int[][] next) {
+    var count = 0;
+    for (var i = 0; i < 19; ++i)
+      for (var j = 0; j < 19; ++j)
+        if (next[i][j] != 0 && next[i][j] != prev[i][j])
+          ++count;
+    return count;
+  }
+
+  static int countRemoved(int[][] prev, int[][] next) {
+    var count = 0;
+    for (var i = 0; i < 19; ++i)
+      for (var j = 0; j < 19; ++j)
+        if (next[i][j] == 0 && next[i][j] != prev[i][j])
+          ++count;
+    return count;
   }
 }

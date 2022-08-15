@@ -27,8 +27,6 @@ class Serialize {
       return "replay(BluetoothGattCharacteristic.class)";
     if (obj instanceof BluetoothGattService)
       return "replay(BluetoothGattService.class)";
-    if (obj instanceof BluetoothNotification)
-      return "replay(BluetoothNotification.class)";
     if (obj instanceof byte[])
       return serializeByteArr((byte[]) obj);
     if (obj instanceof Object[])

@@ -35,7 +35,7 @@ class Bluetooth {
   }
 
   void initOnce(Consumer<Point> callback) throws IOException {
-    System.out.println("\nWaiting for Bluetooth device...");
+    System.out.println("Waiting for Bluetooth device...");
     device = find(GOBAN_MAC_ADDRESS, "Device not found.");
     if (!device.connect())
       throw new IOException("Could not connect to the device.");
@@ -76,117 +76,104 @@ class Bluetooth {
     return device.getConnected();
   }
 
+  boolean setLight(int x, int y, int c) {
+    y = 18 - y;
+    var arr = new byte[14];
+    arr[0] = 35;
+    arr[1] = 0x4C;
+    arr[2] = 14;
+    arr[7] = 1;
+    arr[8] = (byte)x;
+    arr[9] = (byte)y;
+    arr[10] = (byte)c;
+    arr[12] = (byte)((x ^ y) << 1);
+    setChecksum(arr);
+    return sendSliced(arr);
+  }
+
   boolean setAllLights(int[][] board) {
     var flat = new int[19 * 19];
     for (var i = 0; i < 19; ++i)
-      for (var j = 0; j < 19; ++j) {
-        var s = board[i][18-j];
-        if (UNICOLOR && s != 0)
-          s = 3;
-        flat[i+19*j] = s;
-      }
+      for (var j = 0; j < 19; ++j)
+        flat[i+19*j] = board[i][18-j];
     return sendSliced(allLightHeaders(allLightsPayload(flat)));
   }
 
-  void setChecksum(byte[] arrby) {
+  void setChecksum(byte[] arr) {
     var n2 = 0;
-    var n = arrby.length - 1;
+    var n = arr.length - 1;
     for (var i = 0; i < n + 0; ++i)
-      n2 = (byte)(n2 ^ arrby[i]);
-    arrby[n] = (byte)(n2 & 255);
+      n2 = (byte)(n2 ^ arr[i]);
+    arr[n] = (byte)(n2 & 255);
   }
 
-  boolean sendSliced(byte[] arrby) {
-    var arrby2 = new byte[arrby.length + 1];
-    arrby2[0] = (byte)(arrby.length & 255);
-    for (var n = 0; n < arrby.length; ++n)
-      arrby2[n + 1] = arrby[n];
-    var n = arrby2.length;
-    for (int n3; n > 0; n -= n3) {
-      n3 = 19;
-      if (n <= 19)
-        n3 = n;
-      arrby = new byte[n3 + 1];
-      arrby[0] = (byte)(n == arrby2.length ? -91 : -89);
-      var n4 = 0;
-      while (n4 < n3) {
-        var n5 = n4 + 1;
-        arrby[n5] = arrby2[arrby2.length - n + n4];
-        n4 = n5;
-      }
-      var ok = outgoing.writeValue(arrby);
+  boolean sendSliced(byte[] arr) {
+    var arr2 = new byte[arr.length + 1];
+    arr2[0] = (byte)(arr.length & 255);
+    for (var n = 0; n < arr.length; ++n)
+      arr2[n + 1] = arr[n];
+    var n2 = 0;
+    for (int n = arr2.length; n > 0; n -= n2) {
+      n2 = Math.min(n, 19);
+      arr = new byte[n2 + 1];
+      arr[0] = (byte)(n == arr2.length ? -91 : -89);
+      for (int n4 = 0; n4 < n2; ++n4)
+        arr[n4 + 1] = arr2[arr2.length - n + n4];
+      var ok = outgoing.writeValue(arr);
       if (!ok)
         return false;
     }
     return true;
   }
 
-  Point decodeMovePacket(byte[] a) {
-    var magic2 = (byte)((char)(-10) + (a[3] ^ a[7]));
-    var magic3 = (byte)((char)(-9) + (a[3] ^ a[8]));
-    var n2 = magic2 - 1;
-    var n = 19 - magic3;
-    return new Point(n2, n);
+  Point decodeMovePacket(byte[] arr) {
+    var magic2 = (byte)((char)(-10) + (arr[3] ^ arr[7])) - 1;
+    var magic3 = 19 - (byte)((char)(-9) + (arr[3] ^ arr[8]));
+    return new Point(magic2, magic3);
   }
 
   byte[] allLightHeaders(byte[] object) {
-    var arrby = new byte[105];
-    var n = 0;
-    arrby[0] = 35;
-    arrby[1] = 66;
-    arrby[2] = 105;
-    arrby[3] = 0x16;
-    arrby[4] = 0x00;
-    arrby[5] = 0x24;
-    arrby[6] = 0x00;
-    var n3 = 7;
-    while (n < object.length) {
-      arrby[n3] = object[n];
-      ++n;
-      ++n3;
-    }
-    var magic = (byte)(arrby[20] ^ (arrby[4] | arrby[3]));
-    arrby[n3] = magic;
-    setChecksum(arrby);
-    return arrby;
+    var arr = new byte[105];
+    arr[0] = 35;
+    arr[1] = 66;
+    arr[2] = 105;
+    arr[3] = 0x16;
+    arr[5] = 0x24;
+    var n2 = 7;
+    for (var n = 0; n < object.length; ++n)
+      arr[n2++] = object[n];
+    arr[n2] = (byte)(arr[20] ^ (arr[4] | arr[3]));
+    setChecksum(arr);
+    return arr;
   }
 
   byte[] allLightsPayload(int[] board) {
-    var n2 = 0;
-    var arrby = new byte[96];
-    for (var n = 0; n < 96; ++n)
-      arrby[n] = 0;
-    arrby[0] = 1;
-    var n = 0;
-    while (n < 19) {
+    var arr = new byte[96];
+    arr[0] = 1;
+    for (var n = 0; n < 19; ++n) {
+      var n2 = n + 342;
       var n3 = n * 5 + 1;
-      n2 = n + 342 + 1;
       for (var i = 18; i >= 0; --i) {
-        var object = board[n2-1];
-        if (object == 3 && i > 10) {
-          var n4 = (int) arrby[n3];
-          object = 1 << 18 - i;
-          arrby[n3] = (byte)(n4 | object);
-          n4 = n3 + 3;
-          arrby[n4] = (byte)(object | arrby[n4]);
-        }
-        if (object == 3 && i > 2) {
-          var n5 = n3 + 1;
-          var n4 = (int) arrby[n5];
-          object = 1 << 10 - i;
-          arrby[n5] = (byte)(n4 | object);
-          n4 = n3 + 4;
-          arrby[n4] = (byte)(object | arrby[n4]);
-        }
-        if (object == 3) {
-          object = n3 + 2;
-          arrby[object] = (byte)(arrby[object] | 1 << 2 - i);
-          arrby[object] = (byte)(arrby[object] | 1 << 7 - i);
+        var object = board[n2];
+        if (i > 10) {
+          if ((object & 1) == 1)
+            arr[n3] |= 1 << 18 - i;
+          if ((object & 2) == 2)
+            arr[n3 + 3] |= 1 << 18 - i;
+        } else if (i <= 10 && i > 2) {
+          if ((object & 1) == 1)
+            arr[n3 + 1] |= 1 << 10 - i;
+          if ((object & 2) == 2)
+            arr[n3 + 4] |= 1 << 10 - i;
+        } else if (i <= 2) {
+          if ((object & 1) == 1)
+            arr[n3 + 2] |= 1 << 2 - i;
+          if ((object & 2) == 2)
+            arr[n3 + 2] |= 1 << 7 - i;
         }
         n2 -= 19;
       }
-      ++n;
     }
-    return arrby;
+    return arr;
   }
 }
