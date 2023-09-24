@@ -76,16 +76,35 @@ class Bluetooth {
     return device.getConnected();
   }
 
+  boolean keepAlive() {
+    // resetLights
+    byte[] arr = new byte[] {
+      (byte)35,
+      (byte)67,
+      (byte)11,
+      (byte)0x34,
+      (byte)0,
+      (byte)0x3b,
+      (byte)0,
+      (byte)0x12,
+      (byte)0x13,
+      (byte)0,
+      (byte)0
+    };
+    setChecksum(arr);
+    return sendSliced(arr);
+  }
+
   boolean setLight(int x, int y, int c) {
     y = 18 - y;
     var arr = new byte[14];
     arr[0] = 35;
-    arr[1] = 0x4C;
+    arr[1] = 76;
     arr[2] = 14;
     arr[7] = 1;
     arr[8] = (byte)x;
     arr[9] = (byte)y;
-    arr[10] = (byte)c;
+    arr[10] = (byte)(UNICOLOR ? 1 : c);
     arr[12] = (byte)((x ^ y) << 1);
     setChecksum(arr);
     return sendSliced(arr);
@@ -95,14 +114,14 @@ class Bluetooth {
     var flat = new int[19 * 19];
     for (var i = 0; i < 19; ++i)
       for (var j = 0; j < 19; ++j)
-        flat[i+19*j] = board[i][18-j];
+        flat[i+19*j] = board[i][18-j] == 0 ? 0 : (UNICOLOR ? 1 : board[i][18-j]);
     return sendSliced(allLightHeaders(allLightsPayload(flat)));
   }
 
   void setChecksum(byte[] arr) {
     var n2 = 0;
     var n = arr.length - 1;
-    for (var i = 0; i < n + 0; ++i)
+    for (var i = 0; i < n; ++i)
       n2 = (byte)(n2 ^ arr[i]);
     arr[n] = (byte)(n2 & 255);
   }

@@ -7,6 +7,7 @@ class Config {
   static String OUTGOING_UUID = "0000fff3-0000-1000-8000-00805f9b34fb";
 
   static boolean MANUAL_SCREEN_CAPTURE_SETUP = false;
+  static boolean UNICOLOR = true;
   static int MAIN_LOOP_PERIOD_MILLI = 10;
   static int BLUETOOTH_TIMEOUT_MILLI = 2000;
   static int MAX_CLICK_ATTEMPS = 10;

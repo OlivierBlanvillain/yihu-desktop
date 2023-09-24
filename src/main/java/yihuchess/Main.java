@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 import java.util.Arrays;
 import static yihuchess.Config.*;
 import tinyb.BluetoothManager;
+import static java.lang.System.currentTimeMillis;
 
 class Main {
   public static void main(String[] args) throws AWTException {
@@ -26,6 +27,7 @@ class Main {
     };
     bluetooth.init(bluetoothCallback);
 
+    var lastMessageMillis = currentTimeMillis();
     int[][] prev = new int[19][19];
     for (;;) {
       try {
@@ -41,16 +43,23 @@ class Main {
           if (added == 1) {
             var newStone = singleNewStone(prev, next);
             var newColor = next[newStone.x][newStone.y];
-            var ok = bluetooth.setLight(newStone.x, newStone.y, newColor);
+            var ok = bluetooth.setLight(newStone.x, newStone.y, UNICOLOR ? 3 : newColor);
             if (!ok) continue;
+            lastMessageMillis = currentTimeMillis();
             System.out.print(MANUAL_SCREEN_CAPTURE_SETUP ? showBoard(next) : ",");
           }
           if (added != 1 || removed != 0) {
             var ok = bluetooth.setAllLights(next);
             if (!ok) continue;
+            lastMessageMillis = currentTimeMillis();
             System.out.print(MANUAL_SCREEN_CAPTURE_SETUP ? showBoard(next) : ".");
           }
           prev = next;
+        } else if (currentTimeMillis() - lastMessageMillis > BLUETOOTH_TIMEOUT_MILLI) {
+          var ok = bluetooth.setAllLights(prev);
+          if (!ok) continue;
+          lastMessageMillis = currentTimeMillis();
+          System.out.print("-");
         }
       } catch (BluetoothException e) {
         var m1 = "GDBus.Error:org.bluez.Error.Failed: Not connected";
