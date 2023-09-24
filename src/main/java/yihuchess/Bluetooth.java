@@ -76,25 +76,6 @@ class Bluetooth {
     return device.getConnected();
   }
 
-  boolean keepAlive() {
-    // resetLights
-    byte[] arr = new byte[] {
-      (byte)35,
-      (byte)67,
-      (byte)11,
-      (byte)0x34,
-      (byte)0,
-      (byte)0x3b,
-      (byte)0,
-      (byte)0x12,
-      (byte)0x13,
-      (byte)0,
-      (byte)0
-    };
-    setChecksum(arr);
-    return sendSliced(arr);
-  }
-
   boolean setLight(int x, int y, int c) {
     y = 18 - y;
     var arr = new byte[14];
